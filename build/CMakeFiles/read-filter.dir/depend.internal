@@ -5,13 +5,6 @@ CMakeFiles/read-filter.dir/MurmurHash3.cpp.o
  /home/tamara/CLionProjects/read-filter/MurmurHash3.cpp
  /home/tamara/CLionProjects/read-filter/MurmurHash3.hpp
 CMakeFiles/read-filter.dir/main.cpp.o
- ../htslib/htslib/hts_defs.h
- ../htslib/htslib/hts_log.h
- ../htslib/htslib/kseq.h
- /home/tamara/CLionProjects/read-filter/KMC/kmc_api/kmc_file.h
- /home/tamara/CLionProjects/read-filter/KMC/kmc_api/kmer_api.h
- /home/tamara/CLionProjects/read-filter/KMC/kmc_api/kmer_defs.h
- /home/tamara/CLionProjects/read-filter/KMC/kmc_api/mmer.h
  /home/tamara/CLionProjects/read-filter/MurmurHash3.hpp
  /home/tamara/CLionProjects/read-filter/bloomfilter.h
  /home/tamara/CLionProjects/read-filter/main.cpp

@@ -4,13 +4,6 @@
 CMakeFiles/read-filter.dir/MurmurHash3.cpp.o: ../MurmurHash3.cpp
 CMakeFiles/read-filter.dir/MurmurHash3.cpp.o: ../MurmurHash3.hpp
 
-CMakeFiles/read-filter.dir/main.cpp.o: ../htslib/htslib/hts_defs.h
-CMakeFiles/read-filter.dir/main.cpp.o: ../htslib/htslib/hts_log.h
-CMakeFiles/read-filter.dir/main.cpp.o: ../htslib/htslib/kseq.h
-CMakeFiles/read-filter.dir/main.cpp.o: ../KMC/kmc_api/kmc_file.h
-CMakeFiles/read-filter.dir/main.cpp.o: ../KMC/kmc_api/kmer_api.h
-CMakeFiles/read-filter.dir/main.cpp.o: ../KMC/kmc_api/kmer_defs.h
-CMakeFiles/read-filter.dir/main.cpp.o: ../KMC/kmc_api/mmer.h
 CMakeFiles/read-filter.dir/main.cpp.o: ../MurmurHash3.hpp
 CMakeFiles/read-filter.dir/main.cpp.o: ../bloomfilter.h
 CMakeFiles/read-filter.dir/main.cpp.o: ../main.cpp
