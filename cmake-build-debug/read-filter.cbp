@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="read-filter"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/tamara/CLionProjects/read-filter/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/tamara/CLionProjects/read-filter/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/tamara/CLionProjects/read-filter/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/tamara/CLionProjects/read-filter/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/tamara/CLionProjects/read-filter/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/home/tamara/CLionProjects/read-filter/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/tamara/CLionProjects/read-filter/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/tamara/CLionProjects/read-filter/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/tamara/CLionProjects/read-filter/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/tamara/CLionProjects/read-filter/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/home/tamara/CLionProjects/read-filter/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/tamara/CLionProjects/read-filter/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/tamara/CLionProjects/read-filter/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/tamara/CLionProjects/read-filter/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/tamara/CLionProjects/read-filter/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="read-filter">
+				<Option output="/home/tamara/CLionProjects/read-filter/cmake-build-debug/read-filter" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/tamara/CLionProjects/read-filter/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/tamara/CLionProjects/read-filter/."/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/htslib"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/htslib/cram"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/htslib/htslib"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/htslib/os"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/KMC/kmc_api"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/KMC/kmc_dump"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/KMC/kmc_dump_sample"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/KMC/kmc_tools"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/KMC/kmc_tools/libs"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/KMC/kmer_counter"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/KMC/kmer_counter/libs"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/KMC/kmer_counter/libs/vectorclass"/>
+					<Add directory="/home/tamara/include"/>
+					<Add directory="/usr/include/c++/6"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/6"/>
+					<Add directory="/usr/include/c++/6/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/6/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/6/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/7/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/7/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/tamara/CLionProjects/read-filter/cmake-build-debug/Makefile&quot;  VERBOSE=1 read-filter"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/tamara/CLionProjects/read-filter/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/tamara/CLionProjects/read-filter/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/tamara/CLionProjects/read-filter/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="read-filter/fast">
+				<Option output="/home/tamara/CLionProjects/read-filter/cmake-build-debug/read-filter" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/tamara/CLionProjects/read-filter/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/tamara/CLionProjects/read-filter/."/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/htslib"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/htslib/cram"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/htslib/htslib"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/htslib/os"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/KMC/kmc_api"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/KMC/kmc_dump"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/KMC/kmc_dump_sample"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/KMC/kmc_tools"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/KMC/kmc_tools/libs"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/KMC/kmer_counter"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/KMC/kmer_counter/libs"/>
+					<Add directory="/home/tamara/CLionProjects/read-filter/KMC/kmer_counter/libs/vectorclass"/>
+					<Add directory="/home/tamara/include"/>
+					<Add directory="/usr/include/c++/6"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/6"/>
+					<Add directory="/usr/include/c++/6/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/6/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/6/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/7/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/7/include-fixed"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/tamara/CLionProjects/read-filter/cmake-build-debug/Makefile&quot;  VERBOSE=1 read-filter/fast"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/tamara/CLionProjects/read-filter/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/tamara/CLionProjects/read-filter/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/tamara/CLionProjects/read-filter/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/tamara/CLionProjects/read-filter/KMC">
+			<Option target="read-filter"/>
+		</Unit>
+		<Unit filename="/home/tamara/CLionProjects/read-filter/MurmurHash3.cpp">
+			<Option target="read-filter"/>
+		</Unit>
+		<Unit filename="/home/tamara/CLionProjects/read-filter/MurmurHash3.hpp">
+			<Option target="read-filter"/>
+		</Unit>
+		<Unit filename="/home/tamara/CLionProjects/read-filter/bloomfilter.h">
+			<Option target="read-filter"/>
+		</Unit>
+		<Unit filename="/home/tamara/CLionProjects/read-filter/htslib">
+			<Option target="read-filter"/>
+		</Unit>
+		<Unit filename="/home/tamara/CLionProjects/read-filter/main.cpp">
+			<Option target="read-filter"/>
+		</Unit>
+		<Unit filename="/home/tamara/CLionProjects/read-filter/main2.cpp">
+			<Option target="read-filter"/>
+		</Unit>
+		<Unit filename="/home/tamara/CLionProjects/read-filter/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>
