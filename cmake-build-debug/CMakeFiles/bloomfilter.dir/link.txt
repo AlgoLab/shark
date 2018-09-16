@@ -1,1 +1,0 @@
-/usr/bin/g++  -g   CMakeFiles/bloomfilter.dir/main.cpp.o  -o bloomfilter 

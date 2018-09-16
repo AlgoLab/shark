@@ -1,9 +1,15 @@
 #include <iostream>
 #include <fstream>
-#include <sdsl/int_vector.hpp>
-#include <SDL/begin_code.h>
-#include <sdsl/util.hpp>
-#include <sdsl/int_vector.hpp> // for the bit_vector class
+#include "sdsl/int_vector.hpp"
+//#include <SDL/begin_code.h>
+#include "sdsl/util.hpp"
+#include "sdsl/int_vector.hpp" // for the bit_vector class
+
+#include <vector>       // std::vector
+#include <algorithm>
+#include <array>
+#include <functional>  // for std::greater
+#include "sdsl/rank_support.hpp" // for rank data structures
 
 #include "bloomfilter.h"
 #include "hts_log.h"
@@ -30,7 +36,6 @@ struct less_second {
    vector<int> search(const string &kmer, BF &bloomfilter){
 	std::vector<int> null;
 	if(bloomfilter.test_kmer(kmer)){
-		cout << "sono nell'if di search" << endl;
 		return bloomfilter.get_index(kmer);
 	}else
 		return null;
@@ -43,11 +48,10 @@ struct less_second {
 
 int main(int argc, char *argv[]) {
 
-	cout << "inizializzo bloom \n";
 	BF bloom(sizebloom);
 	vector<int> output;
-	vector<int> index;
-	ifstream kmer_file("kmer.txt");
+	vector<int> index_vector;
+	ifstream kmer_file("input/kmer.txt");
 	ifstream input;
 	map<int,string> mappa;
 	char filename[64];
@@ -63,33 +67,30 @@ int main(int argc, char *argv[]) {
 	}
 	bloom.switch_mode();
 	kmer_file.close();
-	kmer_file.open("kmer.txt");
+	kmer_file.open("input/kmer.txt");
 
 	while (std::getline(kmer_file, line)){
 		int rank = bloom.get_rank_kmer(line);
-		int indice = bloom.get_idx(line);
-		index.push_back(indice);
-		mappa.insert(pair<int,string>(indice,line));
+		int index = bloom.get_idx(line);
+		index_vector.push_back(index);
+		mappa.insert(pair<int,string>(index,line));
 	}
 
 	//ordino il vettore che contiene gli indici
-	std::sort(index.begin(), index.end(), std::less<int>());
+	std::sort(index_vector.begin(), index_vector.end(), std::less<int>());
 	
 	//aggiungo tutti i kmer al bloom filter
-	cout << "sto per entrare nel for" << endl;
-	for(int j = 0; j < index.size(); j++){
-		cout << "sono nel for" << endl;
-		cout << mappa.at(index[j]) << endl;
-		string kmer_ref = mappa.at(index[j]);
-		cout << "faccio increment" << endl;
 
-		input.open("input"+kmer_ref+".txt");
+	for(int j = 0; j < index_vector.size(); j++){
+		string kmer_ref = mappa.at(index_vector[j]);
+		input.open("input/input"+kmer_ref+".txt");
 		bloom.add_to_kmer(kmer_ref,input);	
 		
 	}
 	
 	cout << "************************* \n faccio search \n *****************" << endl;
-	output = search("CGG", bloom);
+	output = search("CTT", bloom);
+
 
 	//stampo il vettore restituito dal search
 	if(!output.empty()){
@@ -99,6 +100,8 @@ int main(int argc, char *argv[]) {
 		}
 	}else
 		cout << "il kmer non è presente nel bloom filter" << endl;
+
+	cout << "*************************" << endl;
 	
 }
 

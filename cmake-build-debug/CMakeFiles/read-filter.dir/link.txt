@@ -1,1 +1,0 @@
-/usr/bin/g++  -g   CMakeFiles/read-filter.dir/main.cpp.o CMakeFiles/read-filter.dir/MurmurHash3.cpp.o CMakeFiles/read-filter.dir/main2.cpp.o  -o read-filter  -L/home/tamara/lib -Wl,-rpath,/home/tamara/lib -lsdsl -ldivsufsort -ldivsufsort64 
