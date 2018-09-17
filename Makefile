@@ -6,7 +6,7 @@ LIBS = -L./sdsl-lite/build/lib -L./sdsl-lite/build/external/libdivsufsort/lib -L
 
 all: read-filter
 
-read-filter: main.o MurmurHash3.o \
+read-filter: main.o MurmurHash3.o bloomfilter.h\
 						./KMC/kmc_api/kmc_file.o ./KMC/kmc_api/kmer_api.o ./KMC/kmc_api/mmer.o
 	@echo "* Linking read-filter"
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(LDFLAGS)

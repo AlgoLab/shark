@@ -5,6 +5,7 @@
 #include <array>
 #include <sdsl/bit_vectors.hpp>
 #include <string>
+#include <sdsl/int_vector.hpp>
 
 #include "MurmurHash3.hpp"
 #include "KMC/kmc_api/kmc_file.h"
@@ -54,7 +55,7 @@ private:
     }
 
 public:
-    BF(const size_t size) :  _bf(size, 0) { _size = size; } vector<vector<int> > set_index;  
+    BF(const size_t size) :  _bf(size, 0) { _size = size; }  ; 
     ~BF() {}
 
 
@@ -62,6 +63,7 @@ public:
     void add_kmer(const string &kmer) {
         uint64_t hash = _get_hash(kmer);
         _bf[hash % _size] = 1;
+	bv = bit_vector(100,0);
     }
 
     bool test_kmer(const string &kmer) const {
@@ -69,34 +71,27 @@ public:
         return _bf[hash % _size];
     }
     
+    //to be removed
     bool get_rank_kmer(const string &kmer) const {
-    	if(!_mode)
-    		return false;
+    	
         uint64_t hash = _get_hash(kmer);
         size_t bf_idx = hash % _size;
         if(_bf[bf_idx])
         	return _brank(bf_idx);
     }
     
+    //to be removed
     int get_idx (const string &kmer){
         uint64_t hash = _get_hash(kmer);
         size_t bf_idx = hash % _size;
     	return bf_idx;
     }
     
-   void switch_mode() {
-	_mode = true;
-	_brank = rank_support_v<1>(&_bf);
-	bv = bit_vector(100,0);
-
-    }
-  
+    //function to add indexes of a known kmer
     bool add_to_kmer(const string &kmer, ifstream& input) {
-
-    	if (!_mode)
-            return false;
-
-        uint64_t hash = _get_hash(kmer);
+	
+	_brank = rank_support_v<1>(&_bf);
+    	uint64_t hash = _get_hash(kmer);
 	int pos;
         size_t bf_idx = hash % _size;
 	int i = 0;
@@ -104,14 +99,20 @@ public:
 	string line;
 	int count = 0;
 	int newrank = 0;
+	int num_idx;
+
 
 	if (_bf[bf_idx]) {
 	        size_t cnts_idx = _brank(bf_idx);
-	        int num_idx=0;
+		if(set_index[key].size() == 0)
+		        int num_idx=0;
+		else
+			int num_idx = set_index[key].size();
 		if (input.is_open()) {
 	        	while (getline(input, line)) {
 		       		int a = std::stoi(line);
-	               		index.push_back(a);
+				set_index[key][num_idx];	               		
+				//index.push_back(a);
 				num_idx++;
 				}
 		}
@@ -132,6 +133,10 @@ public:
 	
 		if(bv[pos]!=1)
 			bv[pos] = 1;
+
+		for(int j = 0; j<set_index.size()-1;j++){
+			set_index[j].insert( set_index[j].end(), set_index[j+1].begin(), set_index[j+1].end() );
+		}
 
         	return true;
 	}
@@ -164,7 +169,7 @@ public:
 		        end_pos=i;
 		}
 		for(int i=pos; i <end_pos; i++)
-			index_res.push_back(index[i]);
+			//index_res.push_back(index[i]);
 
                 return index_res;
         }
@@ -175,15 +180,16 @@ private:
     const BF &operator=(const BF &other) { return *this; }
     const BF &operator=(const BF &&other) { return *this; }
 
-    bool _mode; // false = write, true = read
+
     size_t _size;
+    uint8_t size_set = 10000;
     bit_vector _bf;
     rank_support_v<1> _brank;
     rank_support_v<1> _rank;
-    int_vector<8> _counts;
     vector<int> index;
     bit_vector bv;
-
+    vector< vector<int> > set_index;
+    int_vector<> index_kmer();
 
 };
 

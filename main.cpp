@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
 	ifstream input;
 	map<int,string> mappa;
 	char filename[64];
-	
+
 	
 	//aggiungo al bloom filter i kmer presi da un file contenente i kmer che voglio cercare
 	std::string line;
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
 
 		bloom.add_kmer(line);
 	}
-	bloom.switch_mode();
+
 	kmer_file.close();
 	kmer_file.open("input/kmer.txt");
 
@@ -80,7 +80,6 @@ int main(int argc, char *argv[]) {
 	std::sort(index_vector.begin(), index_vector.end(), std::less<int>());
 	
 	//aggiungo tutti i kmer al bloom filter
-
 	for(int j = 0; j < index_vector.size(); j++){
 		string kmer_ref = mappa.at(index_vector[j]);
 		input.open("input/input"+kmer_ref+".txt");
@@ -88,6 +87,7 @@ int main(int argc, char *argv[]) {
 		
 	}
 	
+
 	cout << "************************* \n faccio search \n *****************" << endl;
 	output = search("CTT", bloom);
 
