@@ -12,9 +12,6 @@
 
 using namespace std;
 using namespace sdsl;
-typedef bit_vector::size_type size_type;
-
-
 
 static const char RCN[128] = {
         0,   0,   0, 0,   0,   0,   0,   0,   0,   0,   //  0
@@ -55,121 +52,139 @@ private:
     }
 
 public:
-    BF(const size_t size) :  _bf(size, 0) { _size = size; }  ; 
+    BF(const size_t size) :  _bf(size, 0) { _size = size; } ; 
     ~BF() {}
 
 
-
+    //function to add a k-mer to BF and initialize vectors
+    
     void add_kmer(const string &kmer) {
         uint64_t hash = _get_hash(kmer);
         _bf[hash % _size] = 1;
 	bv = bit_vector(100,0);
+	set_index.resize(100, vector<int>(50));
+	index_kmer = int_vector<64> (100);
+	index_for_bv = vector<int>(100);
+	
     }
 
+    //function to test the presence of a k-mer in the BF
+    
     bool test_kmer(const string &kmer) const {
         uint64_t hash = _get_hash(kmer);
         return _bf[hash % _size];
     }
+      
     
-    //to be removed
-    bool get_rank_kmer(const string &kmer) const {
-    	
-        uint64_t hash = _get_hash(kmer);
-        size_t bf_idx = hash % _size;
-        if(_bf[bf_idx])
-        	return _brank(bf_idx);
-    }
+    //function to add indexes of a given kmer
     
-    //to be removed
-    int get_idx (const string &kmer){
-        uint64_t hash = _get_hash(kmer);
-        size_t bf_idx = hash % _size;
-    	return bf_idx;
-    }
-    
-    //function to add indexes of a known kmer
     bool add_to_kmer(const string &kmer, ifstream& input) {
 	
 	_brank = rank_support_v<1>(&_bf);
     	uint64_t hash = _get_hash(kmer);
-	int pos;
         size_t bf_idx = hash % _size;
 	int i = 0;
-	int key = bf_idx;
 	string line;
-	int count = 0;
-	int newrank = 0;
 	int num_idx;
-
-
+	
 	if (_bf[bf_idx]) {
-	        size_t cnts_idx = _brank(bf_idx);
-		if(set_index[key].size() == 0)
-		        int num_idx=0;
-		else
-			int num_idx = set_index[key].size();
+		
+	        int kmer_rank = _brank(bf_idx+1);
+		//num_idx is the position where indexes start to be stored
+		if(set_index[kmer_rank][0] == 0){
+		       num_idx=0;
+		}else{
+			while(set_index[kmer_rank][i] != 0)
+				i++;
+		}		
+		num_idx = i;
+		//reading of the file with the indexes and storage in set_index, in a position according to the k-mer rank
 		if (input.is_open()) {
 	        	while (getline(input, line)) {
 		       		int a = std::stoi(line);
-				set_index[key][num_idx];	               		
-				//index.push_back(a);
+				set_index[kmer_rank][num_idx]=a;	               		
 				num_idx++;
 				}
 		}
 		input.close();
-		_rank = rank_support_v<1>(&bv);
-		newrank=_rank(bv.size());
 
-		if (newrank != 0){
-			for(int i=0; count != newrank && i < bv.size() ;i++ ){
-				pos = i;
-				if(bv[i] == 1)
-					count++;
-			}
-		}else
-			pos = 0;
-
-		pos = pos+num_idx;
-	
-		if(bv[pos]!=1)
-			bv[pos] = 1;
-
-		for(int j = 0; j<set_index.size()-1;j++){
-			set_index[j].insert( set_index[j].end(), set_index[j+1].begin(), set_index[j+1].end() );
-		}
+		//vector that contains the number of indexes of each k-mer
+		index_for_bv[kmer_rank] = num_idx;
 
         	return true;
 	}
     }
 
+    
+    
+
+    //function that returns the indexes of a given k-mer
+    
     vector<int> get_index(const string &kmer){
-    	uint64_t hash = _get_hash(kmer);
+    	
+	uint64_t hash = _get_hash(kmer);
         size_t bf_idx = hash % _size;
         size_t rank_searched = _brank(bf_idx+1);
         vector<int> index_res;
  	int count =0;
-	int pos;
-	int i;
-	int end_pos;
-	
-        if (_bf[bf_idx]){
-		if(rank_searched ==1){
-			pos = 0;
-			for(i=0; bv[i] ==0 ;i++ );
-			end_pos =i;
+	int pos=0;
+	int end_pos=0;
+	int k=0;
+	int tmp=0;
+	int pos_tmp = 0;
+	int h = 0;
 
+
+	
+   	//construction of the int_vector<> that contains all indexes
+	for(int i=0; i< set_index.size() ;i++){
+		k = index_for_bv[i];
+		if( k != 0)
+			//sorting of the indexes of each k-mer, before the storage in the int_vector
+			std::sort(begin(set_index[i]), begin(set_index[i])+k, std::less<int>());
+	}
+
+
+	//storage of indexes in the int_vector
+	for(int i=0; i< set_index.size();i++){
+		for(int j =0; j < set_index[i].size() && set_index[i][j] != 0;j++){
+			index_kmer[tmp]=set_index[i][j];
+			tmp++;
+		}	
+	}
+
+
+
+	for(int i = 1; i < index_for_bv.size(); i++){
+		for(int j = pos_tmp; j < bv.size() && j < pos_tmp + index_for_bv[i];j++){
+			bv[j]=0;
+			h = j;
+		}
+		bv[h] = 1;
+		pos_tmp = h+1;
+	}
+			
+	//search in the bit vector for the start position and end position in index_kmer of a sequence of indexes
+	if (_bf[bf_idx]){
+		if(rank_searched == 1){
+			pos = 0;
+			for(k=0; bv[k] == 0 ;k++ );
+			end_pos = k;
 		}else{
-			for(i=0; count != rank_searched-1 && i < bv.size() ;i++ ){
-				pos = i;
-				if(bv[i] == 1)
+			for(k=0; count != rank_searched-1 && k < bv.size() ;k++ ){
+				pos = k;
+				if(bv[k] == 1)
 					count++;
 			}
-			while(bv[i]!=1)
-				i++;
-		        end_pos=i;
+			pos = k;
+			while(bv[k]!=1)
+				k++;
+		        end_pos=k;
 		}
-		for(int i=pos; i <end_pos; i++)
-			//index_res.push_back(index[i]);
+		
+		//output vector
+		for(int i=pos; i <= end_pos; i++)
+			index_res.push_back(index_kmer[i]);
 
                 return index_res;
         }
@@ -182,14 +197,14 @@ private:
 
 
     size_t _size;
-    uint8_t size_set = 10000;
+
     bit_vector _bf;
     rank_support_v<1> _brank;
     rank_support_v<1> _rank;
-    vector<int> index;
+    vector<int> index_for_bv;
     bit_vector bv;
     vector< vector<int> > set_index;
-    int_vector<> index_kmer();
+    int_vector<64> index_kmer;
 
 };
 
