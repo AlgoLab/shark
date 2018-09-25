@@ -29,6 +29,9 @@ read-filter
 *.sql
 *.sqlite
 
+# Emacs files
+*~
+
 # OS generated files #
 ######################
 .DS_Store
