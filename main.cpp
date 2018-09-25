@@ -13,7 +13,7 @@ const size_t sizebloom = 100;
 BF bloom(sizebloom);
 
 typedef bit_vector::size_type size_type;
-int const bit_size = 64;
+
 
 template <typename T1, typename T2>
 struct less_second {
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
 	//testing with some k-mers
 	bloom.add_to_kmer("ATC", input2);
 	cout <<  "searching... " << endl;
-	output = search("CCT", bloom);
+	output = search("ATC", bloom);
 
 	//print the indexes vector
 	if(!output.empty()){

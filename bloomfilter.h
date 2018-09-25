@@ -61,10 +61,10 @@ public:
     void add_kmer(const string &kmer) {
         uint64_t hash = _get_hash(kmer);
         _bf[hash % _size] = 1;
-	bv = bit_vector(100,0);
-	set_index.resize(100, vector<int>(50));
-	index_kmer = int_vector<64> (100);
-	index_for_bv = vector<int>(100);
+	bv = bit_vector(1000,0);
+	set_index.resize(_size, vector<int>(1000));
+	index_kmer = int_vector<64> (1000);
+	index_for_bv = vector<int>(1000);
 	
     }
 
@@ -102,7 +102,7 @@ public:
 		if (input.is_open()) {
 	        	while (getline(input, line)) {
 		       		int a = std::stoi(line);
-				set_index[kmer_rank][num_idx]=a;	               		
+				set_index[kmer_rank][num_idx]=a;
 				num_idx++;
 				}
 		}
@@ -143,8 +143,7 @@ public:
 			//sorting of the indexes of each k-mer, before the storage in the int_vector
 			std::sort(begin(set_index[i]), begin(set_index[i])+k, std::less<int>());
 	}
-
-
+	
 	//storage of indexes in the int_vector
 	for(int i=0; i< set_index.size();i++){
 		for(int j =0; j < set_index[i].size() && set_index[i][j] != 0;j++){
@@ -152,8 +151,6 @@ public:
 			tmp++;
 		}	
 	}
-
-
 
 	for(int i = 1; i < index_for_bv.size(); i++){
 		for(int j = pos_tmp; j < bv.size() && j < pos_tmp + index_for_bv[i];j++){
