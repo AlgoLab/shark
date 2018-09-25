@@ -18,8 +18,7 @@ template < typename T1, typename T2 > struct less_second {
 	typedef pair < T1, T2 > type;
 	bool operator () (type const &a, type const &b)const {
 		return a.second < b.second;
-	}
-};
+}};
 
 //function search, returns indexes in a vector
 vector < int >search(const string & kmer, BF & bloomfilter)
@@ -37,10 +36,13 @@ vector < int >search(const string & kmer, BF & bloomfilter)
 
 int main(int argc, char *argv[])
 {
+
 	BF bloom(sizebloom);
 	vector < int >output;
 	vector < string > kmer_vector;
 	ifstream kmer_file("input/kmer.txt");
+	ifstream input;
+	ifstream input2("input/input2.txt");
 	std::string line;
 
 	//add k-mer to bloom filter
@@ -55,7 +57,9 @@ int main(int argc, char *argv[])
 	//add k-mer indexes to data structure
 	for (int j = 0; j < kmer_vector.size(); j++) {
 		string kmer_ref = kmer_vector[j];
+		input.open("input/input" + kmer_ref + ".txt");
 		bloom.add_to_kmer(kmer_ref, 2);
+
 	}
 
 	//testing with some k-mers
