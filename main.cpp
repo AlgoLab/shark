@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 	//switch mode: now we can get the indexes
 	bloom.switch_mode(2);
 	cout << "searching... " << endl;
-	output = search("TGG", bloom);
+	output = search("ATC", bloom);
 
 	//print the indexes vector
 	if (!output.empty()) {
@@ -81,5 +81,7 @@ int main(int argc, char *argv[])
 
 	} else
 		cout << "il kmer non è presente nel bloom filter" << endl;
+
+	bloom.add_to_kmer("ATC", 78389);
 
 }
