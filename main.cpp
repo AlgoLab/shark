@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 	//switch mode: now we can get the indexes
 	bloom.switch_mode(2);
 	cout << "searching... " << endl;
-	output = search("CTT", bloom);
+	output = search("TGG", bloom);
 
 	//print the indexes vector
 	if (!output.empty()) {
