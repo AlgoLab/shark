@@ -1,9 +1,0 @@
-[submodule "KMC"]
-	path = KMC
-	url = https://github.com/refresh-bio/KMC.git
-[submodule "htslib"]
-	path = htslib
-	url = https://github.com/samtools/htslib.git
-[submodule "sdsl-lite"]
-	path = sdsl-lite
-	url = https://github.com/simongog/sdsl-lite.git
