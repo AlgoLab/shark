@@ -23,6 +23,9 @@
 # Binaries
 read-filter
 
+# Folders
+/--force
+
 # Logs and databases #
 ######################
 *.log
