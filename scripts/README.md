@@ -7,7 +7,7 @@
 - wgsim (from samtools package)
 
 ### Steps:
-1. Get transcripts _Homo_sapiens.GRCh38.cdna.all.fa.gz_ from [here](ftp://ftp.ensembl.org/pub/release-93/fasta/homo_sapiens/cdna/)
+1. Get transcripts _Homo_sapiens.GRCh38.cdna.all.fa.gz_ from [here](https://ftp.ensembl.org/pub/release-93/fasta/homo_sapiens/cdna/)
 2. Extract transcripts of a specific chromosome (e.g. 1, 22, Y...)
 ```bash
 python3 extract_transcripts.py [cDNA.fa.gz] [chr] > [chr.fa]
@@ -16,7 +16,7 @@ python3 extract_transcripts.py [cDNA.fa.gz] [chr] > [chr.fa]
 ```bash
 python3 clean_fa.py [chr.fa] [min_len] > [chr_mod.fa]
 ```
-4. Simulate reads from transcripts - [n_reads] is computed by using the formula you can find [here](https://en.wikipedia.org/wiki/Coverage_(genetics)#Calculation (the length of the genome is the length computed in the previous step):
+4. Simulate reads from transcripts - [n_reads] is computed by using the formula you can find [here](https://en.wikipedia.org/wiki/Coverage_(genetics)#Calculation) (the length of the genome is the length computed in the previous step):
 ```bash
 wgsim -N [n_reads] -1 [read_len] -e [err_rate] -R 0 -r 0 [chr_mod.fa] [chr.reads.fq] /dev/null
 ```
