@@ -15,7 +15,7 @@ In order to install the repository run the followings steps.
 First clone the repository and move into it.
 
 ```shell
-git clone https://github.com/tmunimib/read-filter.git
+git clone --recursive https://github.com/tmunimib/read-filter.git
 cd read-filter
 ```
 
