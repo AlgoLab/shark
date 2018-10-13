@@ -10,6 +10,10 @@
 #include <sdsl/select_support.hpp>
 #include <string>
 
+// test
+#include <fstream>
+#include <stdint.h>
+
 using namespace std;
 using namespace sdsl;
 
@@ -63,8 +67,6 @@ public:
     if (!_check_mode) {
       uint64_t hash = _get_hash(kmer);
       _bf[hash % _size] = 1;
-      // test
-      size_t bf_idx = hash % _size;
     }
   }
 
@@ -91,6 +93,8 @@ public:
         // we need to add 1 because _set_index[0] will always be empty, because
         // index 0 doesn't match any rank value
         num_kmer = _brank.rank(_bf.size()) + 1;
+        // test
+
         if (num_kmer != 1)
           _set_index.resize(num_kmer, vector<int>());
         return true;
@@ -103,14 +107,21 @@ public:
 
       if (_mode == 2) {
 
-        for (auto set : _set_index)
-          tot_idx += set.size();
-        _bv = bit_vector(tot_idx, 0);
-
         // sorting indexes for each k-mer
         for (auto set : _set_index)
           if (set.size())
-            std::sort(begin(set), end(set), std::less<int>());
+            sort(begin(set), end(set), less<int>());
+
+        // remove duplicates
+        for (int i = 0; i < _set_index.size(); i++)
+          _set_index[i].erase(
+              unique(_set_index[i].begin(), _set_index[i].end()),
+              _set_index[i].end());
+
+        for (auto set : _set_index)
+          tot_idx += set.size();
+
+        _bv = bit_vector(tot_idx, 0);
 
         // storage indexes in the int_vector
         _index_kmer = int_vector<64>(tot_idx);
@@ -135,8 +146,8 @@ public:
           }
         }
 
-        // compression of index k-mer
-        util::bit_compress(_index_kmer);
+        // FIXME: compression of index k-mer
+        // util::bit_compress(_index_kmer);
 
         int pos = -1;
         // set _bv elements to 1 at the end of each index range
@@ -209,16 +220,21 @@ public:
       // the steps below it fails for _select_bv(0)
       if (rank_searched == 1) {
         bv_idx = _select_bv(1);
+        index_res.push_back(_index_kmer[bv_idx]);
+        return index_res;
       } else {
         start_pos = _select_bv(rank_searched - 1) + 1;
         end_pos = _select_bv(rank_searched);
       }
+
       // output vector
       // FIXME if a k-mer has no indexes the function returns a vector with only
       // one 0
       // FIXME how to handle this situation? is the main that has to manage it?
-      for (int i = start_pos; i <= end_pos; i++)
+      for (int i = start_pos; i <= end_pos; i++) {
         index_res.push_back(_index_kmer[i]);
+      }
+
       return index_res;
     }
     return {};

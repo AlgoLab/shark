@@ -1,83 +1,103 @@
 #include "bloomfilter.h"
+#include "kseq.h"
 #include "sdsl/int_vector.hpp"
 #include "sdsl/int_vector.hpp" // for the bit_vector class
 #include "sdsl/util.hpp"
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <stdio.h>
+#include <string>
 #include <vector> // std::vector
+#include <zlib.h>
 
-// using namespace std;
-// using namespace sdsl;
-const size_t sizebloom = 100;
+const size_t sizebloom = 1000000;
 BF bloom(sizebloom);
-
-typedef bit_vector::size_type size_type;
-
-template <typename T1, typename T2> struct less_second {
-  typedef pair<T1, T2> type;
-  bool operator()(type const &a, type const &b) const {
-    return a.second < b.second;
-  }
-};
 
 // function search, returns indexes in a vector
 vector<int> search(const string &kmer, BF &bloomfilter) {
   return bloomfilter.get_index(kmer);
 }
 
+// STEP 1: declare the type of file handler and the read() function
+
+KSEQ_INIT(gzFile, gzread)
 /*****************************************
  * Main
  *****************************************/
 
 int main(int argc, char *argv[]) {
+  gzFile fp;
+  kseq_t *seq;
+  int l;
+  map<string, int> MapID;
+  int mapped_ID = 0;
+  string key_map;
+  string input_seq;
+  const int n = 5; // Assumed positive number smaller than str.size()
+  const int n1 = n - 1;
+  vector<string> transcript_kmers;
   BF bloom(sizebloom);
-  vector<int> output;
-  vector<string> kmer_vector;
-  ifstream kmer_file("input/kmer.txt");
-  std::string line;
 
-  // add k-mer to bloom filter
-  while (std::getline(kmer_file, line)) {
-    bloom.add_kmer(line);
-    kmer_vector.push_back(line);
-    cout << " aggiungo kmer " << line << endl;
+  fp = gzopen("input/chrY_mod.fa", "r"); // STEP 2: open the file handler
+  seq = kseq_init(fp);                   // STEP 3: initialize seq
+
+  ofstream kmer_idx_FILE;
+  kmer_idx_FILE.open("output.txt");
+  while ((l = kseq_read(seq)) >= 0) { // STEP 4: read sequence
+
+    // seq name is the key map for the transcript, and has an assigned int
+    key_map = seq->name.s;
+
+    MapID[key_map] = mapped_ID;
+
+    input_seq = seq->seq.s;
+    transcript_kmers.resize(input_seq.size() - n1);
+    transform(input_seq.cbegin(), input_seq.cend() - n1,
+              transcript_kmers.begin(),
+              [n](const auto &i) { return string(&i, n); });
+
+    // add all elements of result to BF
+    for (auto &kmer : transcript_kmers) {
+      bloom.add_kmer(kmer);
+      kmer_idx_FILE << kmer << " " << mapped_ID << " " << endl;
+    }
+
+    mapped_ID++;
   }
-  kmer_file.close();
 
-  bloom.add_kmer("CCC");
-  cout << "aggiungo CCC " << endl;
+  kmer_idx_FILE.close();
 
-  // switch mode: we can add the indexes for each k-mer
+  kseq_destroy(seq);
+  gzclose(fp);
+  l = 0;
+  fp = gzopen("input/chrY_mod.fa", "r");
+  seq = kseq_init(fp);
+
+  ifstream FILE_input;
+  FILE_input.open("output.txt");
+  int idx;
+  string kmer;
   bloom.switch_mode(1);
-  // add k-mer indexes to data structure
-  for (int j = 0; j < kmer_vector.size(); j++) {
-    string kmer_ref = kmer_vector[j];
-    bloom.add_to_kmer(kmer_ref, 2);
+  while (FILE_input >> kmer >> idx) {
+
+    bloom.add_to_kmer(kmer, idx);
   }
+  FILE_input.close();
 
-  // testing with some k-mers
-  // single add
-  bloom.add_to_kmer("ATC", 1984);
-  bloom.add_to_kmer("CGG", 55);
-  bloom.add_to_kmer("CTT", 14);
-  bloom.add_to_kmer("TGG", 4);
-  bloom.add_to_kmer("CCC", 4);
-
-  // multiple add
-  vector<int> ATC_idx = {213, 434, 535, 65};
-  bloom.multiple_add_to_kmer("ATC", ATC_idx);
-
-  // switch mode: now we can get the indexes
   bloom.switch_mode(2);
-  cout << "searching... " << endl;
-  output = search("CCC", bloom);
 
-  // print the indexes vector
-  if (!output.empty()) {
-    for (int j = 0; j < output.size(); j++)
-      cout << output[j] << " ";
+  vector<int> result;
+  result = bloom.get_index("TTTTT");
 
-  } else
-    cout << "il kmer non è presente nel bloom filter" << endl;
+  for (int &i : result)
+    cout << i << " ";
+  cout << endl;
+
+  printf("return value: %d\n", l);
+  kseq_destroy(seq); // STEP 5: destroy seq
+  gzclose(fp);       // STEP 6: close the file handler
+
+  
+  return 0;
 }
