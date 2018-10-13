@@ -39,11 +39,11 @@ int main(int argc, char *argv[]) {
   vector<string> transcript_kmers;
   BF bloom(sizebloom);
 
-  fp = gzopen("input/chrY_mod.fa", "r"); // STEP 2: open the file handler
+  fp = gzopen("example/chrY_mod.fa", "r"); // STEP 2: open the file handler
   seq = kseq_init(fp);                   // STEP 3: initialize seq
 
   ofstream kmer_idx_FILE;
-  kmer_idx_FILE.open("output.txt");
+  kmer_idx_FILE.open("example/output.txt");
   while ((l = kseq_read(seq)) >= 0) { // STEP 4: read sequence
 
     // seq name is the key map for the transcript, and has an assigned int
@@ -71,11 +71,11 @@ int main(int argc, char *argv[]) {
   kseq_destroy(seq);
   gzclose(fp);
   l = 0;
-  fp = gzopen("input/chrY_mod.fa", "r");
+  fp = gzopen("example/chrY_mod.fa", "r");
   seq = kseq_init(fp);
 
   ifstream FILE_input;
-  FILE_input.open("output.txt");
+  FILE_input.open("example/output.txt");
   int idx;
   string kmer;
   bloom.switch_mode(1);

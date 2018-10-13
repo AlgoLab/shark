@@ -10,10 +10,6 @@
 #include <sdsl/select_support.hpp>
 #include <string>
 
-// test
-#include <fstream>
-#include <stdint.h>
-
 using namespace std;
 using namespace sdsl;
 
