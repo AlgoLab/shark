@@ -32,15 +32,24 @@ int main(int argc, char *argv[]) {
   int file_line;
   map<int, string> legend_ID;
   int mapped_ID = 0;
-
   const int kmer_length = 60;
-
   vector<string> transcript_kmers_vec;
   BF bloom(sizebloom);
   string name_transcript;
+string transcript_name = "";
+string read_name = "";
+
+if( argc > 1 ) {
+      transcript_name = argv[1];
+      read_name = argv[2];
+    }
+    else {
+      cout << "Error in input" << endl;
+      return 1;
+}
 
   transcript_file =
-      gzopen("example/chrY_mod.fa", "r"); // STEP 2: open the file handler
+      gzopen(transcript_name.c_str(), "r"); // STEP 2: open the file handler
   seq = kseq_init(transcript_file);       // STEP 3: initialize seq
 
   // open and read the .fa
@@ -103,7 +112,7 @@ int main(int argc, char *argv[]) {
 
   // open .fq file that contains the reads
   read_file =
-      gzopen("example/chrY_reads.fq", "r"); // STEP 2: open the file handler
+      gzopen(read_name.c_str(), "r"); // STEP 2: open the file handler
   seq = kseq_init(read_file);               // STEP 3: initialize seq
 
   while ((file_line = kseq_read(seq)) >= 0) { // STEP 4: read sequence of reads
