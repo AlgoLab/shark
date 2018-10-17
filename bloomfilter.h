@@ -85,13 +85,12 @@ public:
         size_t num_kmer;
         _check_mode = true;
         _brank = rank_support_v<1>(&_bf);
-	
+
         // FIXME: +1 ? What happens if there are 0 kmers in the bf?
         // we need to add 1 because _set_index[0] will always be empty, because
         // index 0 doesn't match any rank value
         num_kmer = _brank.rank(_bf.size()) + 1;
 
-        
         if (num_kmer != 1)
           _set_index.resize(num_kmer, vector<int>());
         return true;

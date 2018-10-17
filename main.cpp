@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
   gzclose(transcript_file); // STEP 6: close the file handler
 
   ifstream FILE_input;
-  FILE_input.open("example/output.txt");
+  FILE_input.open("example/kmer_idx.txt");
   int idx;
   string kmer;
   bloom.switch_mode(1);
