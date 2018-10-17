@@ -20,47 +20,52 @@ vector<int> search(const string &kmer, BF &bloomfilter) {
 }
 
 // STEP 1: declare the type of file handler and the read() function
-
 KSEQ_INIT(gzFile, gzread)
+
 /*****************************************
  * Main
  *****************************************/
 
 int main(int argc, char *argv[]) {
-  gzFile fp;
+  gzFile transcript_file;
   kseq_t *seq;
-  int l;
+  int file_line;
   map<int, string> legend_ID;
   int mapped_ID = 0;
-  string key_map;
-  string input_seq;
-  const int n = 5; // Assumed positive number smaller than str.size()
-  const int n1 = n - 1;
-  vector<string> transcript_kmers;
+
+  const int kmer_length = 60;
+
+  vector<string> transcript_kmers_vec;
   BF bloom(sizebloom);
   string name_transcript;
 
-  fp = gzopen("example/chrY_mod.fa", "r"); // STEP 2: open the file handler
-  seq = kseq_init(fp);                     // STEP 3: initialize seq
+  transcript_file =
+      gzopen("example/chrY_mod.fa", "r"); // STEP 2: open the file handler
+  seq = kseq_init(transcript_file);       // STEP 3: initialize seq
 
   // open and read the .fa
   ofstream kmer_idx_FILE;
-  kmer_idx_FILE.open("example/output.txt");
-  while ((l = kseq_read(seq)) >= 0) { // STEP 4: read sequence of transcript
-
+  kmer_idx_FILE.open("example/kmer_idx.txt");
+  while ((file_line = kseq_read(seq)) >=
+         0) { // STEP 4: read sequence of transcript
+    string input_seq;
     // seq name is the key map for the transcript, and has an assigned int
     name_transcript = seq->name.s;
+
     legend_ID[mapped_ID] = name_transcript;
 
     // split each sequence of a transcritp in k-mer with k=n
     input_seq = seq->seq.s;
-    transcript_kmers.resize(input_seq.size() - n1);
-    transform(input_seq.cbegin(), input_seq.cend() - n1,
-              transcript_kmers.begin(),
-              [n](const auto &i) { return string(&i, n); });
+    transcript_kmers_vec.resize(input_seq.size() - (kmer_length - 1));
+    transform(input_seq.cbegin(), input_seq.cend() - (kmer_length - 1),
+              transcript_kmers_vec.begin(),
+              [kmer_length](const auto &i) { return string(&i, kmer_length); });
 
     // add all k-mers to BF
-    for (auto &kmer : transcript_kmers) {
+
+    // FIXME: devo creare un file perchè non è possibile switchare tra mod 0 e
+    // mod 1 per aggiungere volta per volta prima kmer e poi indici associati
+    for (auto &kmer : transcript_kmers_vec) {
       bloom.add_kmer(kmer);
       kmer_idx_FILE << kmer << " " << mapped_ID << " " << endl;
     }
@@ -69,15 +74,16 @@ int main(int argc, char *argv[]) {
   }
 
   kmer_idx_FILE.close();
-  printf("return value: %d\n", l);
-  kseq_destroy(seq); // STEP 5: destroy seq
-  gzclose(fp);       // STEP 6: close the file handler
+  printf("return value: %d\n", file_line);
+  kseq_destroy(seq);        // STEP 5: destroy seq
+  gzclose(transcript_file); // STEP 6: close the file handler
 
   ifstream FILE_input;
   FILE_input.open("example/output.txt");
   int idx;
   string kmer;
   bloom.switch_mode(1);
+
   // read a file that contains a k-mer and the relative id of the transcript
   while (FILE_input >> kmer >> idx) {
     // add each k-mer and its id to BF
@@ -85,78 +91,74 @@ int main(int argc, char *argv[]) {
   }
   FILE_input.close();
 
-  // test
   bloom.switch_mode(2);
-  vector<int> result;
-  result = bloom.get_index("TTTTT");
+
+  gzFile read_file;
+  string read_seq;
+  vector<string> read_kmers_vec;
+  map<int, int> classification_id;
+  ofstream final_id;
+  vector<int> id_kmer;
+  final_id.open("example/final_id.txt");
 
   // open .fq file that contains the reads
-  fp = gzopen("example/chrY_reads.fq", "r"); // STEP 2: open the file handler
-  seq = kseq_init(fp);                       // STEP 3: initialize seq
-  string read_header;
-  string read_seq;
-  vector<string> read_kmers;
-  map<int, int> classification_id;
+  read_file =
+      gzopen("example/chrY_reads.fq", "r"); // STEP 2: open the file handler
+  seq = kseq_init(read_file);               // STEP 3: initialize seq
 
-  map<string, int> read_mapped;
+  while ((file_line = kseq_read(seq)) >= 0) { // STEP 4: read sequence of reads
 
-  while ((l = kseq_read(seq)) >= 0) { // STEP 4: read sequence of reads
-    read_header = seq->name.s;
     read_seq = seq->seq.s;
 
-    input_seq = seq->seq.s;
-    transcript_kmers.resize(input_seq.size() - n1);
-    transform(input_seq.cbegin(), input_seq.cend() - n1,
-              transcript_kmers.begin(),
-              [n](const auto &i) { return string(&i, n); });
-
-    read_kmers.resize(read_seq.size() - n1);
-    transform(read_seq.cbegin(), read_seq.cend() - n1, read_kmers.begin(),
-              [n](const auto &i) { return string(&i, n); });
+    read_kmers_vec.resize(read_seq.size() - (kmer_length - 1));
+    transform(read_seq.cbegin(), read_seq.cend() - (kmer_length - 1),
+              read_kmers_vec.begin(),
+              [kmer_length](const auto &i) { return string(&i, kmer_length); });
 
     // search all kmers of each read in the BF and store relative indexes
 
-    vector<int> id_kmer;
-
-    for (auto &kmer : read_kmers) {
+    for (auto &kmer : read_kmers_vec) {
       id_kmer = bloom.get_index(kmer);
-      for (auto &id : id_kmer)
-        classification_id[id] += 1;
-    }
-    int index_found;
-    int max = 0;
-    for (auto it_class = classification_id.cbegin();
-         it_class != classification_id.cend(); ++it_class) {
 
-      if (it_class->second > max) {
+      for (auto &id : id_kmer) {
 
-        max = it_class->second;
-        index_found = it_class->first;
+        classification_id[id]++;
       }
     }
 
-    read_mapped[read_seq] = index_found;
-    classification_id.clear();
-  }
+    int max = 0;
 
-  ofstream final_id;
-  final_id.open("example/final_id.txt");
-  string header_transcript;
-  for (auto iterator_read = read_mapped.cbegin();
-       iterator_read != read_mapped.cend(); ++iterator_read) {
+    // save in file all headers of transcripts probably associated to the read
+    for (auto it_class = classification_id.cbegin();
+         it_class != classification_id.cend(); it_class++) {
+      // it_class->second is the number of times that the index
+      // (it_class->first) has been found
+      if (it_class->second >= max) {
 
-    auto iterator_indexes = legend_ID.find(iterator_read->second);
-
-    if (iterator_indexes != legend_ID.end()) {
-      header_transcript = iterator_indexes->second;
+        max = it_class->second;
+      }
     }
-    final_id << iterator_read->first << " " << header_transcript << endl;
+    // search and store in a file all elements of classification with
+    // max(classification[i])
+    for (auto it_class = classification_id.cbegin();
+         it_class != classification_id.cend(); it_class++) {
+      if (it_class->second == max) {
+        // legend_ID[it_class->first] is the name of the transcript, mapped with
+        // index it_class->first
+        final_id << read_seq << " " << legend_ID[it_class->first] << endl;
+      }
+    }
+
+    classification_id.clear();
+    id_kmer.clear();
+    read_kmers_vec.clear();
   }
+
   final_id.close();
 
-  printf("return value: %d\n", l);
-  kseq_destroy(seq); // STEP 5: destroy seq
-  gzclose(fp);       // STEP 6: close the file handler
+  printf("return value: %d\n", file_line);
+  kseq_destroy(seq);  // STEP 5: destroy seq
+  gzclose(read_file); // STEP 6: close the file handler
 
   return 0;
 }
