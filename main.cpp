@@ -53,8 +53,6 @@ if( argc > 1 ) {
   seq = kseq_init(transcript_file);       // STEP 3: initialize seq
 
   // open and read the .fa
-  ofstream kmer_idx_FILE;
-  kmer_idx_FILE.open("example/kmer_idx.txt");
   while ((file_line = kseq_read(seq)) >=
          0) { // STEP 4: read sequence of transcript
     string input_seq;
@@ -76,29 +74,41 @@ if( argc > 1 ) {
     // mod 1 per aggiungere volta per volta prima kmer e poi indici associati
     for (auto &kmer : transcript_kmers_vec) {
       bloom.add_kmer(kmer);
-      kmer_idx_FILE << kmer << " " << mapped_ID << " " << endl;
     }
 
     mapped_ID++;
   }
 
-  kmer_idx_FILE.close();
   printf("return value: %d\n", file_line);
   kseq_destroy(seq);        // STEP 5: destroy seq
   gzclose(transcript_file); // STEP 6: close the file handler
 
-  ifstream FILE_input;
-  FILE_input.open("example/kmer_idx.txt");
-  int idx;
-  string kmer;
+  
   bloom.switch_mode(1);
 
-  // read a file that contains a k-mer and the relative id of the transcript
-  while (FILE_input >> kmer >> idx) {
-    // add each k-mer and its id to BF
-    bloom.add_to_kmer(kmer, idx);
+transcript_file =
+      gzopen(transcript_name.c_str(), "r"); 
+  seq = kseq_init(transcript_file);      
+  int idx = 0;
+  // open and read the .fa, every time a kmer is found the relative index is added to BF
+  while ((file_line = kseq_read(seq)) >=
+         0) { 
+    string input_seq;
+   
+    // split each sequence of a transcritp in k-mer with k=n
+    input_seq = seq->seq.s;
+    transcript_kmers_vec.resize(input_seq.size() - (kmer_length - 1));
+    transform(input_seq.cbegin(), input_seq.cend() - (kmer_length - 1),
+              transcript_kmers_vec.begin(),
+              [kmer_length](const auto &i) { return string(&i, kmer_length); });
+
+    // add for each k-mer its id to BF
+    for (auto &kmer : transcript_kmers_vec) 
+    	bloom.add_to_kmer(kmer, idx);
+    
+    idx++;
+
   }
-  FILE_input.close();
 
   bloom.switch_mode(2);
 
@@ -114,6 +124,7 @@ if( argc > 1 ) {
   read_file =
       gzopen(read_name.c_str(), "r"); // STEP 2: open the file handler
   seq = kseq_init(read_file);               // STEP 3: initialize seq
+
 
   while ((file_line = kseq_read(seq)) >= 0) { // STEP 4: read sequence of reads
 
@@ -136,7 +147,6 @@ if( argc > 1 ) {
     }
 
     int max = 0;
-
     // save in file all headers of transcripts probably associated to the read
     for (auto it_class = classification_id.cbegin();
          it_class != classification_id.cend(); it_class++) {
@@ -157,6 +167,7 @@ if( argc > 1 ) {
         final_id << read_seq << " " << legend_ID[it_class->first] << endl;
       }
     }
+
 
     classification_id.clear();
     id_kmer.clear();

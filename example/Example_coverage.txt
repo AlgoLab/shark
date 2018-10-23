@@ -17,3 +17,11 @@ Number of  transcripts: 283
 Number of reads: 65004
 K-mer length: 5
 Reads that match only one transcript: 83
+
+
+
+provare ad allineare i reads che si ripetono ai trascritti che matchano
+
+byobu -->ulimit per limitare la memoria delle shell create
+
+\time -v 

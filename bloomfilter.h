@@ -108,11 +108,13 @@ public:
           if (set.size())
             sort(begin(set), end(set), less<int>());
 
+
         // remove duplicates
         for (int i = 0; i < _set_index.size(); i++)
           _set_index[i].erase(
               unique(_set_index[i].begin(), _set_index[i].end()),
               _set_index[i].end());
+	
 
         for (auto set : _set_index)
           tot_idx += set.size();
