@@ -110,7 +110,7 @@ public:
 
 
         // remove duplicates
-        for (int i = 0; i < _set_index.size(); i++)
+        for (size_t i = 0; i < _set_index.size(); i++)
           _set_index[i].erase(
               unique(_set_index[i].begin(), _set_index[i].end()),
               _set_index[i].end());
@@ -127,7 +127,7 @@ public:
 
         // i starts from 1 because the firse element in _set_index will always
         // be an empty vector, because no k-mer has rank = 0
-        for (int i = 1; i < _set_index.size(); i++) {
+        for (size_t i = 1; i < _set_index.size(); i++) {
 
           // _set_index[i].size != 0 because a vector in _set_index with size 0
           // is an empty vector, and there are no indexes to add to _index_kmer
@@ -149,7 +149,7 @@ public:
 
         int pos = -1;
         // set _bv elements to 1 at the end of each index range
-        for (int i = 1; i < _set_index.size(); i++) {
+        for (size_t i = 1; i < _set_index.size(); i++) {
           pos += _set_index[i].size();
           _bv[pos] = 1;
         }
@@ -189,7 +189,7 @@ public:
   // add a vector of indexes of a k-mer
 
   bool multiple_add_to_kmer(const string &kmer, vector<int> idx_vector) {
-    for (int i = 0; i < idx_vector.size(); i++)
+    for (size_t i = 0; i < idx_vector.size(); i++)
       if (!add_to_kmer(kmer, idx_vector[i]))
         return false;
     return true;

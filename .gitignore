@@ -31,6 +31,7 @@ read-filter
 *.log
 *.sql
 *.sqlite
+.*fa
 
 # Emacs files
 *~

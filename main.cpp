@@ -118,7 +118,7 @@ transcript_file =
   map<int, int> classification_id;
   ofstream final_id;
   vector<int> id_kmer;
-  final_id.open("example/final_id.txt");
+  final_id.open("final_id.fa");
 
   // open .fq file that contains the reads
   read_file =
@@ -164,7 +164,8 @@ transcript_file =
       if (it_class->second == max) {
         // legend_ID[it_class->first] is the name of the transcript, mapped with
         // index it_class->first
-        final_id << read_seq << " " << legend_ID[it_class->first] << endl;
+        final_id << ">" << legend_ID[it_class->first] << endl;
+        final_id << read_seq << endl;
       }
     }
 
