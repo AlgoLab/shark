@@ -25,6 +25,7 @@ read-filter
 
 # Folders
 /--force
+/input
 
 # Logs and databases #
 ######################
