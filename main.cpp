@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
   map<int, int> classification_id;
   ofstream final_id;
   vector<int> id_kmer;
-  final_id.open("example/final_id.fa");
+  final_id.open("id_results.fa");
 
   // open .fq file that contains the reads
   read_file = gzopen(read_name.c_str(), "r"); // STEP 2: open the file handler
@@ -177,19 +177,22 @@ int main(int argc, char *argv[]) {
   kseq_destroy(seq);  // STEP 5: destroy seq
   gzclose(read_file); // STEP 6: close the file handler
 
-
+/****************************************
+*ALIGNMENT
+****************************************/
+/*
   // read fasta created as output in the preious step
   gzFile test_file;
 
   test_file =
-      gzopen("example/final_id.fa", "r"); // STEP 2: open the file handler
+      gzopen("final_id.fa", "r"); // STEP 2: open the file handler
   seq = kseq_init(test_file);             // STEP 3: initialize seq
 
   // seq1--> read
   // seq2--> transcript
 
   ofstream al_file;
-  al_file.open("example/alignment.fa");
+  al_file.open("alignment.fa");
   while ((file_line = kseq_read(seq)) >= 0) { // read final_id
     kseq_t *seq_tran;
     string transcript_assigned;
@@ -212,7 +215,7 @@ int main(int argc, char *argv[]) {
         al_file << ">" << name_tr << endl;
         al_file << ";Score = "
                 << localAlignment(ali, Score<int>(3, -3, -2, -2), DynamicGaps())
-                << endl;
+                << ";" << endl;
         al_file << seq1 << endl;
       }
     }
@@ -239,7 +242,7 @@ int main(int argc, char *argv[]) {
   printf("return value: %d\n", file_line);
   kseq_destroy(seq);  
   gzclose(align_fasta); 
-
+*/
 
 
   return 0;
