@@ -85,6 +85,8 @@ int main(int argc, char *argv[]) {
   kseq_destroy(seq);        // STEP 5: destroy seq
   gzclose(transcript_file); // STEP 6: close the file handler
 
+cout << "Transcript file processed" << endl;
+
   bloom.switch_mode(1);
 
   transcript_file = gzopen(transcript_name.c_str(), "r");
@@ -108,6 +110,8 @@ int main(int argc, char *argv[]) {
 
     idx++;
   }
+
+cout << "Transcript indexes added to Bloom filter" << endl;
 
   bloom.switch_mode(2);
 
@@ -176,6 +180,8 @@ int main(int argc, char *argv[]) {
   printf("return value: %d\n", file_line);
   kseq_destroy(seq);  // STEP 5: destroy seq
   gzclose(read_file); // STEP 6: close the file handler
+
+cout << "Association done." << endl;
 
 /****************************************
 *ALIGNMENT
