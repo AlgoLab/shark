@@ -1,4 +1,4 @@
-CFLAGS	= -Wno-char-subscripts -DNDEBUG -Wall -O3 -std=c++14 -I. -I./sdsl-lite/build/include -I./htslib/htslib -I./KMC -fopenmp
+CFLAGS	= -g -Wno-char-subscripts -Wall -O3 -std=c++14 -I. -I./sdsl-lite/build/include -I./htslib/htslib -I./KMC -fopenmp
 CXXFLAGS= ${CFLAGS}
 LIBS = -L./sdsl-lite/build/lib -L./sdsl-lite/build/external/libdivsufsort/lib -L./htslib/ -lhts -lz -lsdsl -ldivsufsort -ldivsufsort64
 

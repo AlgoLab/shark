@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
-#include <seqan/align.h>
+//#include <seqan/align.h>
 #include <stdio.h>
 #include <string>
 #include <vector> // std::vector
@@ -19,7 +19,7 @@ BF bloom(sizebloom);
 vector<int> search(const string &kmer, BF &bloomfilter) {
   return bloomfilter.get_index(kmer);
 }
-using namespace seqan;
+//using namespace seqan;
 
 // STEP 1: declare the type of file handler and the read() function
 KSEQ_INIT(gzFile, gzread)
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
   string name_transcript;
   string transcript_name = "";
   string read_name = "";
-  typedef String<char> TSequence;             // sequence type
+  //typedef String<char> TSequence;             // sequence type
 
   if (argc > 1) {
     transcript_name = argv[1];
