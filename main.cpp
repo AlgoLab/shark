@@ -1,3 +1,4 @@
+
 #include "bloomfilter.h"
 #include "kseq.h"
 #include "sdsl/int_vector.hpp"
@@ -12,7 +13,7 @@
 #include <vector> // std::vector
 #include <zlib.h>
 
-const size_t sizebloom = 10000000000000000000000000000;
+const size_t sizebloom = 500 * (0b1 << 20);
 BF bloom(sizebloom);
 
 // function search, returns indexes in a vector
@@ -71,6 +72,8 @@ int main(int argc, char *argv[]) {
               [kmer_length](const auto &i) { return string(&i, kmer_length); });
 
     // add all k-mers to BF
+
+
 
     // FIXME: devo creare un file perchè non è possibile switchare tra mod 0 e
     // mod 1 per aggiungere volta per volta prima kmer e poi indici associati
