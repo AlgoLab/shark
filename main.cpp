@@ -12,8 +12,9 @@
 #include <vector> // std::vector
 #include <zlib.h>
 
-const size_t sizebloom = 500 * (0b1 << 20);
-BF bloom(sizebloom);
+
+static size_t sizebloom = (10e11);
+
 
 // function search, returns indexes in a vector
 vector<int> search(const string &kmer, BF &bloomfilter) {
@@ -71,6 +72,8 @@ int main(int argc, char *argv[]) {
               [kmer_length](const auto &i) { return string(&i, kmer_length); });
 
     // add all k-mers to BF
+
+
 
     // FIXME: devo creare un file perchè non è possibile switchare tra mod 0 e
     // mod 1 per aggiungere volta per volta prima kmer e poi indici associati
@@ -189,14 +192,11 @@ cout << "Association done." << endl;
 /*
   // read fasta created as output in the preious step
   gzFile test_file;
-
   test_file =
       gzopen("final_id.fa", "r"); // STEP 2: open the file handler
   seq = kseq_init(test_file);             // STEP 3: initialize seq
-
   // seq1--> read
   // seq2--> transcript
-
   ofstream al_file;
   al_file.open("alignment.fa");
   while ((file_line = kseq_read(seq)) >= 0) { // read final_id
@@ -207,7 +207,6 @@ cout << "Association done." << endl;
     gzFile transcript_global;
     string name_tr;
  	TSequence seq2;
-
     transcript_global = gzopen("example/chrY_mod.fa", "r");
     seq_tran = kseq_init(transcript_global);
     while ((file_line = kseq_read(seq_tran)) >= 0) { // read final_id
@@ -232,11 +231,8 @@ cout << "Association done." << endl;
   printf("return value: %d\n", file_line);
   kseq_destroy(seq);  // STEP 5: destroy seq
   gzclose(test_file); // STEP 6: close the file handler
-
-
   //read fasta with reads and scores of their alignment with transcript
   gzFile align_fasta;
-
   align_fasta =
       gzopen("example/alignment.fa", "r"); 
   seq = kseq_init(align_fasta);  
