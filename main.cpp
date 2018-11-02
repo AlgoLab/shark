@@ -13,8 +13,9 @@
 #include <vector> // std::vector
 #include <zlib.h>
 
-const size_t sizebloom = 500 * (0b1 << 20);
-BF bloom(sizebloom);
+
+static size_t sizebloom = (10e11);
+
 
 // function search, returns indexes in a vector
 vector<int> search(const string &kmer, BF &bloomfilter) {
