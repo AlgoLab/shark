@@ -17,7 +17,7 @@ static size_t sizebloom = (10e11);
 
 
 // function search, returns indexes in a vector
-vector<int> search(const string &kmer, BF &bloomfilter) {
+vector<long> search(const string &kmer, BF &bloomfilter) {
   return bloomfilter.get_index(kmer);
 }
 //using namespace seqan;
@@ -32,10 +32,10 @@ KSEQ_INIT(gzFile, gzread)
 int main(int argc, char *argv[]) {
   gzFile transcript_file;
   kseq_t *seq;
-  int file_line;
-  map<int, string> legend_ID;
-  int mapped_ID = 0;
-  const int kmer_length = 60;
+  long file_line;
+  map<long, string> legend_ID;
+  long mapped_ID = 0;
+  const int kmer_length = 260;
   vector<string> transcript_kmers_vec;
   BF bloom(sizebloom);
   string name_transcript;
@@ -54,18 +54,20 @@ int main(int argc, char *argv[]) {
   transcript_file =
       gzopen(transcript_name.c_str(), "r"); // STEP 2: open the file handler
   seq = kseq_init(transcript_file);         // STEP 3: initialize seq
-
+  long size = 0;
+  string input_seq;
   // open and read the .fa
   while ((file_line = kseq_read(seq)) >=
          0) { // STEP 4: read sequence of transcript
-    string input_seq;
+    
     // seq name is the key map for the transcript, and has an assigned int
     name_transcript = seq->name.s;
-
+	cout << name_transcript << endl;
     legend_ID[mapped_ID] = name_transcript;
 
     // split each sequence of a transcritp in k-mer with k=n
     input_seq = seq->seq.s;
+    
     transcript_kmers_vec.resize(input_seq.size() - (kmer_length - 1));
     transform(input_seq.cbegin(), input_seq.cend() - (kmer_length - 1),
               transcript_kmers_vec.begin(),
@@ -73,18 +75,19 @@ int main(int argc, char *argv[]) {
 
     // add all k-mers to BF
 
-
-
-    // FIXME: devo creare un file perchè non è possibile switchare tra mod 0 e
-    // mod 1 per aggiungere volta per volta prima kmer e poi indici associati
     for (auto &kmer : transcript_kmers_vec) {
       bloom.add_kmer(kmer);
     }
-
+    size =size+ transcript_kmers_vec.size();
+	cout <<size <<endl; 
     mapped_ID++;
-  }
+	cout << "map " << mapped_ID << endl;
+	
+	input_seq.clear();
+    transcript_kmers_vec.clear();
+   }
 
-  printf("return value: %d\n", file_line);
+  printf("return value: %ld\n", file_line);
   kseq_destroy(seq);        // STEP 5: destroy seq
   gzclose(transcript_file); // STEP 6: close the file handler
 
@@ -94,7 +97,7 @@ cout << "Transcript file processed" << endl;
 
   transcript_file = gzopen(transcript_name.c_str(), "r");
   seq = kseq_init(transcript_file);
-  int idx = 0;
+  long idx = 0;
   // open and read the .fa, every time a kmer is found the relative index is
   // added to BF
   while ((file_line = kseq_read(seq)) >= 0) {
@@ -114,6 +117,10 @@ cout << "Transcript file processed" << endl;
     idx++;
   }
 
+  printf("return value: %ld\n", file_line);
+  kseq_destroy(seq);        // STEP 5: destroy seq
+  gzclose(transcript_file); // STEP 6: close the file handler
+
 cout << "Transcript indexes added to Bloom filter" << endl;
 
   bloom.switch_mode(2);
@@ -121,9 +128,9 @@ cout << "Transcript indexes added to Bloom filter" << endl;
   gzFile read_file;
   string read_seq;
   vector<string> read_kmers_vec;
-  map<int, int> classification_id;
+  map<long, long> classification_id;
   ofstream final_id;
-  vector<int> id_kmer;
+  vector<long> id_kmer;
   final_id.open("id_results.fa");
 
   // open .fq file that contains the reads
@@ -150,7 +157,7 @@ cout << "Transcript indexes added to Bloom filter" << endl;
       }
     }
 
-    int max = 0;
+    long max = 0;
     // save in file all headers of transcripts probably associated to the read
     for (auto it_class = classification_id.cbegin();
          it_class != classification_id.cend(); it_class++) {
@@ -180,7 +187,7 @@ cout << "Transcript indexes added to Bloom filter" << endl;
 
   final_id.close();
 
-  printf("return value: %d\n", file_line);
+  printf("return value: %ld\n", file_line);
   kseq_destroy(seq);  // STEP 5: destroy seq
   gzclose(read_file); // STEP 6: close the file handler
 

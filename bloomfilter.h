@@ -76,7 +76,7 @@ public:
   // get indexes of k-mer
   // it's not possible to go back to a previous mode
   bool switch_mode(int user_input) {
-    int tot_idx = 0;
+    long tot_idx = 0;
     _mode = user_input;
 
     // if check_mode is false the only mode used is _mode = 0
@@ -92,7 +92,7 @@ public:
         num_kmer = _brank.rank(_bf.size()) + 1;
 
         if (num_kmer != 1)
-          _set_index.resize(num_kmer, vector<int>());
+          _set_index.resize(num_kmer, vector<long>());
         return true;
       } else
         return false;
@@ -106,7 +106,7 @@ public:
         // sorting indexes for each k-mer
         for (auto set : _set_index)
           if (set.size())
-            sort(begin(set), end(set), less<int>());
+            sort(begin(set), end(set), less<long>());
 
 
         // remove duplicates
@@ -123,7 +123,7 @@ public:
 
         // storage indexes in the int_vector
         _index_kmer = int_vector<64>(tot_idx);
-        int idx_position = 0;
+        long idx_position = 0;
 
         // i starts from 1 because the firse element in _set_index will always
         // be an empty vector, because no k-mer has rank = 0
@@ -132,7 +132,7 @@ public:
           // _set_index[i].size != 0 because a vector in _set_index with size 0
           // is an empty vector, and there are no indexes to add to _index_kmer
           if (_set_index[i].size() != 0) {
-            for (int &set_element : _set_index[i]) {
+            for (long &set_element : _set_index[i]) {
               _index_kmer[idx_position] = set_element;
               idx_position++;
             }
@@ -147,7 +147,7 @@ public:
         // FIXME: compression of index k-mer
         // util::bit_compress(_index_kmer);
 
-        int pos = -1;
+        long pos = -1;
         // set _bv elements to 1 at the end of each index range
         for (size_t i = 1; i < _set_index.size(); i++) {
           pos += _set_index[i].size();
@@ -167,7 +167,7 @@ public:
 
   // add index of a given k-mer
 
-  bool add_to_kmer(const string &kmer, int input_idx) {
+  bool add_to_kmer(const string &kmer, long input_idx) {
     if (_mode != 1)
       return false;
 
@@ -176,7 +176,7 @@ public:
 
     if (_bf[bf_idx]) {
       // bf_idx + 1 because _brank start from position 0
-      int kmer_rank = _brank(bf_idx + 1);
+      long kmer_rank = _brank(bf_idx + 1);
       // storage in _set_index, the index, in position equals to k-mer's rank on
       // bloom filter
       _set_index[kmer_rank].push_back(input_idx);
@@ -188,7 +188,7 @@ public:
 
   // add a vector of indexes of a k-mer
 
-  bool multiple_add_to_kmer(const string &kmer, vector<int> idx_vector) {
+  bool multiple_add_to_kmer(const string &kmer, vector<long> idx_vector) {
     for (size_t i = 0; i < idx_vector.size(); i++)
       if (!add_to_kmer(kmer, idx_vector[i]))
         return false;
@@ -199,14 +199,14 @@ public:
   // FIXME: to improve this function you could avoid copying back a vector<int>
   //        and provide an iterator over _index_kmer instead.
 
-  vector<int> get_index(const string &kmer) {
+  vector<long> get_index(const string &kmer) {
     if (_mode != 2)
       return {};
 
     uint64_t hash = _get_hash(kmer);
     size_t bf_idx = hash % _size;
     size_t rank_searched = _brank(bf_idx + 1);
-    vector<int> index_res;
+    vector<long> index_res;
     int start_pos = 0;
     int end_pos = 0;
     int bv_idx;
@@ -229,7 +229,7 @@ public:
       // FIXME if a k-mer has no indexes the function returns a vector with only
       // one 0
       // FIXME how to handle this situation? is the main that has to manage it?
-      for (int i = start_pos; i <= end_pos; i++) {
+      for (long i = start_pos; i <= end_pos; i++) {
         index_res.push_back(_index_kmer[i]);
       }
 
@@ -251,7 +251,7 @@ private:
   bit_vector _bf;
   rank_support_v<1> _brank;
   bit_vector _bv;
-  vector<vector<int>> _set_index;
+  vector<vector<long>> _set_index;
   int_vector<64> _index_kmer;
   select_support_mcl<1> _select_bv;
 };
