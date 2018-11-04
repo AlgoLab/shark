@@ -13,7 +13,7 @@
 #include <zlib.h>
 
 
-static size_t sizebloom = (10e11);
+static size_t sizebloom = (10e8);
 
 
 // function search, returns indexes in a vector
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
   long file_line;
   map<long, string> legend_ID;
   long mapped_ID = 0;
-  const int kmer_length = 260;
+  const int kmer_length = 60;
   vector<string> transcript_kmers_vec;
   BF bloom(sizebloom);
   string name_transcript;
@@ -62,29 +62,32 @@ int main(int argc, char *argv[]) {
     
     // seq name is the key map for the transcript, and has an assigned int
     name_transcript = seq->name.s;
-	cout << name_transcript << endl;
-    legend_ID[mapped_ID] = name_transcript;
-
-    // split each sequence of a transcritp in k-mer with k=n
-    input_seq = seq->seq.s;
+  input_seq = seq->seq.s;
+//  cout << name_transcript << endl;
     
-    transcript_kmers_vec.resize(input_seq.size() - (kmer_length - 1));
-    transform(input_seq.cbegin(), input_seq.cend() - (kmer_length - 1),
-              transcript_kmers_vec.begin(),
-              [kmer_length](const auto &i) { return string(&i, kmer_length); });
+  if(input_seq.size() >= kmer_length){
+    legend_ID[mapped_ID] = name_transcript;
+      // split each sequence of a transcritp in k-mer with k=n
+    
+      transcript_kmers_vec.resize(input_seq.size() - (kmer_length - 1));
+      transform(input_seq.cbegin(), input_seq.cend() - (kmer_length - 1),
+                transcript_kmers_vec.begin(),
+                [kmer_length](const auto &i) { return string(&i, kmer_length); });
 
-    // add all k-mers to BF
+      // add all k-mers to BF
 
-    for (auto &kmer : transcript_kmers_vec) {
-      bloom.add_kmer(kmer);
+      for (auto &kmer : transcript_kmers_vec) {
+          bloom.add_kmer(kmer);
+      }
+      size =size+ transcript_kmers_vec.size();
+//    cout <<size <<endl; 
+      mapped_ID++;
+//    cout << "map " << mapped_ID << endl;
+  
+    
+      transcript_kmers_vec.clear();
     }
-    size =size+ transcript_kmers_vec.size();
-	cout <<size <<endl; 
-    mapped_ID++;
-	cout << "map " << mapped_ID << endl;
-	
-	input_seq.clear();
-    transcript_kmers_vec.clear();
+    input_seq.clear();
    }
 
   printf("return value: %ld\n", file_line);
@@ -101,20 +104,24 @@ cout << "Transcript file processed" << endl;
   // open and read the .fa, every time a kmer is found the relative index is
   // added to BF
   while ((file_line = kseq_read(seq)) >= 0) {
-    string input_seq;
+    name_transcript = seq->name.s;
+  input_seq = seq->seq.s;
 
-    // split each sequence of a transcritp in k-mer with k=n
-    input_seq = seq->seq.s;
-    transcript_kmers_vec.resize(input_seq.size() - (kmer_length - 1));
-    transform(input_seq.cbegin(), input_seq.cend() - (kmer_length - 1),
+  if(input_seq.size() >= kmer_length){
+
+      // split each sequence of a transcritp in k-mer with k=n
+    
+      transcript_kmers_vec.resize(input_seq.size() - (kmer_length - 1));
+      transform(input_seq.cbegin(), input_seq.cend() - (kmer_length - 1),
               transcript_kmers_vec.begin(),
               [kmer_length](const auto &i) { return string(&i, kmer_length); });
 
-    // add for each k-mer its id to BF
-    for (auto &kmer : transcript_kmers_vec)
-      bloom.add_to_kmer(kmer, idx);
+      // add for each k-mer its id to BF
+      for (auto &kmer : transcript_kmers_vec)
+          bloom.add_to_kmer(kmer, idx);
 
-    idx++;
+      idx++;
+    }
   }
 
   printf("return value: %ld\n", file_line);
@@ -140,6 +147,8 @@ cout << "Transcript indexes added to Bloom filter" << endl;
   while ((file_line = kseq_read(seq)) >= 0) { // STEP 4: read sequence of reads
 
     read_seq = seq->seq.s;
+ 
+  if(read_seq.size() >= kmer_length){
 
     read_kmers_vec.resize(read_seq.size() - (kmer_length - 1));
     transform(read_seq.cbegin(), read_seq.cend() - (kmer_length - 1),
@@ -183,6 +192,7 @@ cout << "Transcript indexes added to Bloom filter" << endl;
     classification_id.clear();
     id_kmer.clear();
     read_kmers_vec.clear();
+    }
   }
 
   final_id.close();
@@ -213,7 +223,7 @@ cout << "Association done." << endl;
     TSequence seq1 = seq->seq.s;
     gzFile transcript_global;
     string name_tr;
- 	TSequence seq2;
+  TSequence seq2;
     transcript_global = gzopen("example/chrY_mod.fa", "r");
     seq_tran = kseq_init(transcript_global);
     while ((file_line = kseq_read(seq_tran)) >= 0) { // read final_id
@@ -244,9 +254,9 @@ cout << "Association done." << endl;
       gzopen("example/alignment.fa", "r"); 
   seq = kseq_init(align_fasta);  
   while ((file_line = kseq_read(seq)) >= 0) { 
-  		cout << seq->name.s << endl;
-  		cout << seq->comment.l << endl;
-  		cout << "seq: " << seq->seq.s << endl;
+      cout << seq->name.s << endl;
+      cout << seq->comment.l << endl;
+      cout << "seq: " << seq->seq.s << endl;
   }
   printf("return value: %d\n", file_line);
   kseq_destroy(seq);  
