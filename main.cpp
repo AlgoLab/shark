@@ -62,7 +62,6 @@ int main(int argc, char *argv[]) {
     
     // seq name is the key map for the transcript, and has an assigned int
     name_transcript = seq->name.s;
-<<<<<<< HEAD
   input_seq = seq->seq.s;
 //  cout << name_transcript << endl;
     
@@ -89,34 +88,6 @@ int main(int argc, char *argv[]) {
       transcript_kmers_vec.clear();
     }
     input_seq.clear();
-=======
-	input_seq = seq->seq.s;
-//	cout << name_transcript << endl;
-    
-	if(input_seq.size() >= kmer_length){
-		legend_ID[mapped_ID] = name_transcript;
-    	// split each sequence of a transcritp in k-mer with k=n
-    
-    	transcript_kmers_vec.resize(input_seq.size() - (kmer_length - 1));
-    	transform(input_seq.cbegin(), input_seq.cend() - (kmer_length - 1),
-        	      transcript_kmers_vec.begin(),
-            	  [kmer_length](const auto &i) { return string(&i, kmer_length); });
-
-    	// add all k-mers to BF
-
-    	for (auto &kmer : transcript_kmers_vec) {
-    	  	bloom.add_kmer(kmer);
-    	}
-    	size =size+ transcript_kmers_vec.size();
-//		cout <<size <<endl; 
-    	mapped_ID++;
-//		cout << "map " << mapped_ID << endl;
-	
-		
-    	transcript_kmers_vec.clear();
-   	}
-   	input_seq.clear();
->>>>>>> 8d4fd77bd69b4a03560576126fbb0b3a28b180af
    }
 
   printf("return value: %ld\n", file_line);
@@ -134,7 +105,6 @@ cout << "Transcript file processed" << endl;
   // added to BF
   while ((file_line = kseq_read(seq)) >= 0) {
     name_transcript = seq->name.s;
-<<<<<<< HEAD
   input_seq = seq->seq.s;
 
   if(input_seq.size() >= kmer_length){
@@ -152,25 +122,6 @@ cout << "Transcript file processed" << endl;
 
       idx++;
     }
-=======
-	input_seq = seq->seq.s;
-
-	if(input_seq.size() >= kmer_length){
-
-    	// split each sequence of a transcritp in k-mer with k=n
-    
-   		transcript_kmers_vec.resize(input_seq.size() - (kmer_length - 1));
-    	transform(input_seq.cbegin(), input_seq.cend() - (kmer_length - 1),
-              transcript_kmers_vec.begin(),
-              [kmer_length](const auto &i) { return string(&i, kmer_length); });
-
-    	// add for each k-mer its id to BF
-    	for (auto &kmer : transcript_kmers_vec)
-      		bloom.add_to_kmer(kmer, idx);
-
-    	idx++;
-  	}
->>>>>>> 8d4fd77bd69b4a03560576126fbb0b3a28b180af
   }
 
   printf("return value: %ld\n", file_line);
@@ -197,11 +148,7 @@ cout << "Transcript indexes added to Bloom filter" << endl;
 
     read_seq = seq->seq.s;
  
-<<<<<<< HEAD
   if(read_seq.size() >= kmer_length){
-=======
-	if(read_seq.size() >= kmer_length){
->>>>>>> 8d4fd77bd69b4a03560576126fbb0b3a28b180af
 
     read_kmers_vec.resize(read_seq.size() - (kmer_length - 1));
     transform(read_seq.cbegin(), read_seq.cend() - (kmer_length - 1),
