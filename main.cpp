@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
-//#include <seqan/align.h>
 #include <stdio.h>
 #include <string>
 #include <vector> // std::vector
@@ -30,16 +29,14 @@ KSEQ_INIT(gzFile, gzread)
 int main(int argc, char *argv[]) {
   gzFile transcript_file;
   kseq_t *seq;
-  long file_line;
-  map<long, string> legend_ID;
-  long mapped_ID = 0;
+  int file_line;
+  map<int, string> legend_ID;
+  int mapped_ID = 0;
   const int kmer_length = 60;
   vector<string> transcript_kmers_vec;
   BF bloom(sizebloom);
-  string name_transcript;
   string transcript_name = "";
   string read_name = "";
-  // typedef String<char> TSequence;             // sequence type
 
   time_t start = time(0);
 
@@ -56,19 +53,18 @@ int main(int argc, char *argv[]) {
   transcript_file =
       gzopen(transcript_name.c_str(), "r"); // STEP 2: open the file handler
   seq = kseq_init(transcript_file);         // STEP 3: initialize seq
-  long size = 0;
+  int size = 0;
   string input_seq;
   // open and read the .fa
   while ((file_line = kseq_read(seq)) >=
          0) { // STEP 4: read sequence of transcript
 
     // seq name is the key map for the transcript, and has an assigned int
-    name_transcript = seq->name.s;
     input_seq = seq->seq.s;
     //  cout << name_transcript << endl;
 
     if (input_seq.size() >= kmer_length) {
-      legend_ID[mapped_ID] = name_transcript;
+      legend_ID[mapped_ID] = seq->name.s;
       // split each sequence of a transcritp in k-mer with k=n
 
       transcript_kmers_vec.resize(input_seq.size() - (kmer_length - 1));
@@ -82,17 +78,14 @@ int main(int argc, char *argv[]) {
       for (auto &kmer : transcript_kmers_vec) {
         bloom.add_kmer(kmer);
       }
-      size = size + transcript_kmers_vec.size();
-      //    cout <<size <<endl;
       mapped_ID++;
-      //    cout << "map " << mapped_ID << endl;
 
       transcript_kmers_vec.clear();
     }
     input_seq.clear();
   }
 
-  printf("return value: %ld\n", file_line);
+  printf("return value: %d\n", file_line);
   kseq_destroy(seq);        // STEP 5: destroy seq
   gzclose(transcript_file); // STEP 6: close the file handler
 
@@ -114,11 +107,10 @@ int main(int argc, char *argv[]) {
 
   transcript_file = gzopen(transcript_name.c_str(), "r");
   seq = kseq_init(transcript_file);
-  long idx = 0;
+  int idx = 0;
   // open and read the .fa, every time a kmer is found the relative index is
   // added to BF
   while ((file_line = kseq_read(seq)) >= 0) {
-    name_transcript = seq->name.s;
     input_seq = seq->seq.s;
 
     if (input_seq.size() >= kmer_length) {
@@ -139,7 +131,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  printf("return value: %ld\n", file_line);
+  printf("return value: %d\n", file_line);
   kseq_destroy(seq);        // STEP 5: destroy seq
   gzclose(transcript_file); // STEP 6: close the file handler
 
@@ -158,13 +150,11 @@ int main(int argc, char *argv[]) {
   gzFile read_file;
   string read_seq;
   vector<string> read_kmers_vec;
-  map<long, long> classification_id;
-  ofstream final_id("id_results.fa");
-  // vector<int> id_kmer;
+  map<int, int> classification_id;
   IDView id_kmer;
 
-  // FILE * pFile;
-  // pFile = fopen ("myfile.txt", "wb");
+  FILE * pFile;
+  pFile = fopen ("id_results.txt", "w");
 
   // open .fq file that contains the reads
   read_file = gzopen(read_name.c_str(), "r"); // STEP 2: open the file handler
@@ -193,11 +183,11 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    long max = std::max(std::max_element(begin(classification_id), end(classification_id),
-                                         [](const std::pair<long, long> &a, const std::pair<long, long> &b) {
+    int max = std::max(std::max_element(begin(classification_id), end(classification_id),
+                                         [](const std::pair<int, int> &a, const std::pair<int, int> &b) {
                                            return a.second < b.second;
                                          })->second,
-                        (long)3);
+                        (int)3);
     // save in file all headers of transcripts probably associated to the read
     // search and store in a file all elements of classification with
     // max(classification[i])
@@ -206,8 +196,12 @@ int main(int argc, char *argv[]) {
       if (it_class->second == max) {
         // legend_ID[it_class->first] is the name of the transcript, mapped
         // with index it_class->first
-        final_id << ">" << legend_ID[it_class->first] << endl;
-        final_id << read_seq << endl;
+       fwrite(seq->name.s, 1, seq->name.l, pFile);
+       fwrite("\t", 1, sizeof("\t"), pFile);
+       fwrite((legend_ID.at(it_class->first)).c_str(), 1,
+       strlen((legend_ID.at(it_class->first)).c_str()), pFile);
+       fwrite("\n", 1, sizeof("\n"), pFile);
+       fflush(pFile);
       }
     }
 
@@ -216,10 +210,9 @@ int main(int argc, char *argv[]) {
     read_kmers_vec.clear();
   }
 
-  final_id.close();
-  // fclose(pFile);
+  fclose(pFile);
 
-  printf("return value: %ld\n", file_line);
+  printf("return value: %d\n", file_line);
   kseq_destroy(seq);  // STEP 5: destroy seq
   gzclose(read_file); // STEP 6: close the file handler
 
