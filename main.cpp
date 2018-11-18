@@ -228,7 +228,7 @@ time_t association_time = time(0);
         // legend_ID[it_class->first] is the name of the transcript, mapped with
         // index it_class->first
         final_id << ">" << legend_ID[it_class->first] << endl;
-        final_id << read_seq << endl;
+        final_id << read_seq << "/1" << endl;
       }
     }
 
