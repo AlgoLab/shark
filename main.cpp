@@ -197,6 +197,7 @@ int main(int argc, char *argv[]) {
         // legend_ID[it_class->first] is the name of the transcript, mapped
         // with index it_class->first
        fwrite(seq->name.s, 1, seq->name.l, pFile);
+       fwrite("/1", 1, sizeof("/1"), pFile);
        fwrite("\t", 1, sizeof("\t"), pFile);
        fwrite((legend_ID.at(it_class->first)).c_str(), 1,
        strlen((legend_ID.at(it_class->first)).c_str()), pFile);
