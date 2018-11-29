@@ -53,7 +53,6 @@ int main(int argc, char *argv[]) {
   transcript_file =
       gzopen(transcript_name.c_str(), "r"); // STEP 2: open the file handler
   seq = kseq_init(transcript_file);         // STEP 3: initialize seq
-  int size = 0;
   string input_seq;
   // open and read the .fa
   while ((file_line = kseq_read(seq)) >=

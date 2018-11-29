@@ -230,7 +230,6 @@ public:
     size_t rank_searched = _brank(bf_idx + 1);
     int start_pos = 0;
     int end_pos = 0;
-    int bv_idx;
 
     // select on _bv
     if (_bf[bf_idx]) {
