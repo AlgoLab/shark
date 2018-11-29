@@ -14,7 +14,7 @@
 static size_t sizebloom = (10e8);
 
 // function search, returns indexes in a vector
-vector<int> search(const string &kmer, BF &bloomfilter) {
+IDView search(const string &kmer, BF &bloomfilter) {
   return bloomfilter.get_index(kmer);
 }
 // using namespace seqan;
@@ -32,10 +32,9 @@ int main(int argc, char *argv[]) {
   int file_line;
   map<int, string> legend_ID;
   int mapped_ID = 0;
-  const int kmer_length = 60;
+  const int kmer_length = 31;
   vector<string> transcript_kmers_vec;
   BF bloom(sizebloom);
-  string name_transcript;
   string transcript_name = "";
   string read_name = "";
 
@@ -62,6 +61,7 @@ int main(int argc, char *argv[]) {
 
     // seq name is the key map for the transcript, and has an assigned int
     input_seq = seq->seq.s;
+    //  cout << name_transcript << endl;
 
     if (input_seq.size() >= kmer_length) {
       legend_ID[mapped_ID] = seq->name.s;
@@ -79,6 +79,7 @@ int main(int argc, char *argv[]) {
         bloom.add_kmer(kmer);
       }
       mapped_ID++;
+
       transcript_kmers_vec.clear();
     }
     input_seq.clear();
@@ -150,9 +151,10 @@ int main(int argc, char *argv[]) {
   string read_seq;
   vector<string> read_kmers_vec;
   map<int, int> classification_id;
-  vector<int> id_kmer;
-  FILE *pFile;
-  pFile = fopen("id_results.txt", "w");
+  IDView id_kmer;
+
+  FILE * pFile;
+  pFile = fopen ("id_results.txt", "w");
 
   // open .fq file that contains the reads
   read_file = gzopen(read_name.c_str(), "r"); // STEP 2: open the file handler
@@ -174,56 +176,41 @@ int main(int argc, char *argv[]) {
 
       for (auto &kmer : read_kmers_vec) {
         id_kmer = bloom.get_index(kmer);
-
-        for (auto &id : id_kmer) {
-          classification_id[id]++;
-        }
+        //		int* buffer = &id_kmer[0];
+        //		fwrite (buffer, sizeof(int), sizeof(buffer), pFile);
+        while (id_kmer.has_next())
+          classification_id[id_kmer.get_next()]++;
       }
-
-      int max = 0;
-      // save in file all headers of transcripts probably associated to the read
-      for (auto it_class = classification_id.cbegin();
-           it_class != classification_id.cend(); it_class++) {
-        // it_class->second is the number of times that the index
-        // (it_class->first) has been found
-        if (it_class->second >= max) {
-          max = it_class->second;
-        }
-      }
-<<<<<<< HEAD
     }
+
+    int max = std::max(std::max_element(begin(classification_id), end(classification_id),
+                                         [](const std::pair<int, int> &a, const std::pair<int, int> &b) {
+                                           return a.second < b.second;
+                                         })->second,
+                        (int)3);
+    // save in file all headers of transcripts probably associated to the read
     // search and store in a file all elements of classification with
     // max(classification[i])
     for (auto it_class = classification_id.cbegin();
          it_class != classification_id.cend(); it_class++) {
-      if (it_class->second == max) {
-        // legend_ID[it_class->first] is the name of the transcript, mapped with
-        // index it_class->first
-        final_id << ">" << legend_ID[it_class->first] << endl;
-        final_id << read_seq << "/1" << endl;
-=======
-      // search and store in a file all elements of classification with
-      // max(classification[i])
-      for (auto it_class = classification_id.cbegin();
-           it_class != classification_id.cend(); it_class++) {
-        if (it_class->second == max) {
-          // legend_ID[it_class->first] is the name of the transcript, mapped
-          // with index it_class->first
-          fwrite(seq->name.s, 1, seq->name.l, pFile);
-          fwrite("\t", 1, sizeof("\t"), pFile);
-          fwrite((legend_ID.at(it_class->first)).c_str(), 1,
-                 strlen((legend_ID.at(it_class->first)).c_str()), pFile);
-          fwrite("\n", 1, sizeof("\n"), pFile);
-          fflush(pFile);
-        }
->>>>>>> 2b93979d048f038e231288e26897fee4ef82bad9
+      if (it_class->second == max && it_class->second >3) {
+        // legend_ID[it_class->first] is the name of the transcript, mapped
+        // with index it_class->first
+       fwrite(seq->name.s, 1, seq->name.l, pFile);
+       fwrite("/1", 1, sizeof("/1"), pFile);
+       fwrite("\t", 1, sizeof("\t"), pFile);
+       fwrite((legend_ID.at(it_class->first)).c_str(), 1,
+       strlen((legend_ID.at(it_class->first)).c_str()), pFile);
+       fwrite("\n", 1, sizeof("\n"), pFile);
+       fflush(pFile);
       }
-
-      classification_id.clear();
-      id_kmer.clear();
-      read_kmers_vec.clear();
     }
+
+    classification_id.clear();
+    id_kmer.clear();
+    read_kmers_vec.clear();
   }
+
   fclose(pFile);
 
   printf("return value: %d\n", file_line);
