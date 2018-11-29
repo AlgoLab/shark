@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   int file_line;
   map<int, string> legend_ID;
   int mapped_ID = 0;
-  const int kmer_length = 60;
+  const int kmer_length = 31;
   vector<string> transcript_kmers_vec;
   BF bloom(sizebloom);
   string transcript_name = "";
@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
     // max(classification[i])
     for (auto it_class = classification_id.cbegin();
          it_class != classification_id.cend(); it_class++) {
-      if (it_class->second == max) {
+      if (it_class->second == max && it_class->second >3) {
         // legend_ID[it_class->first] is the name of the transcript, mapped
         // with index it_class->first
        fwrite(seq->name.s, 1, seq->name.l, pFile);
