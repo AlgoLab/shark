@@ -29,7 +29,29 @@ static const char RCN[128] = {
     0,   0,   0, 0,   0,   0,   0,   0              // 120
 };
 
+class BF;
+
+class IDView {
+private:
+  size_t _b, _e;
+  size_t _p;
+  BF *_bf;
+
+public:
+  IDView() : _b(), _e(), _p(), _bf(nullptr) {}
+  IDView(const size_t &b, const size_t &e, BF *bf)
+      : _b(b), _e(e), _p(b), _bf(bf) {}
+  IDView &operator=(const IDView &rhs);
+  ~IDView(){};
+
+  bool has_next() const { return _p < _e; }
+  int_vector<64>::value_type get_next();
+  size_t size() const { return _e - _b; }
+  void clear();
+};
+
 class BF {
+  friend class IDView;
 
 private:
   static const char _rcc(const char &c) { return RCN[c]; }
@@ -87,8 +109,8 @@ public:
         _brank = rank_support_v<1>(&_bf);
 
         // FIXME: +1 ? What happens if there are 0 kmers in the bf?
-        // we need to add 1 because _set_index[0] will always be empty, because
-        // index 0 doesn't match any rank value
+        // we need to add 1 because _set_index[0] will always be empty,
+        // because index 0 doesn't match any rank value
         num_kmer = _brank.rank(_bf.size()) + 1;
 
         if (num_kmer != 1)
@@ -108,13 +130,11 @@ public:
           if (set.size())
             sort(begin(set), end(set), less<int>());
 
-
         // remove duplicates
         for (size_t i = 0; i < _set_index.size(); i++)
           _set_index[i].erase(
               unique(_set_index[i].begin(), _set_index[i].end()),
               _set_index[i].end());
-	
 
         for (auto set : _set_index)
           tot_idx += set.size();
@@ -129,8 +149,9 @@ public:
         // be an empty vector, because no k-mer has rank = 0
         for (size_t i = 1; i < _set_index.size(); i++) {
 
-          // _set_index[i].size != 0 because a vector in _set_index with size 0
-          // is an empty vector, and there are no indexes to add to _index_kmer
+          // _set_index[i].size != 0 because a vector in _set_index with size
+          // 0 is an empty vector, and there are no indexes to add to
+          // _index_kmer
           if (_set_index[i].size() != 0) {
             for (int &set_element : _set_index[i]) {
               _index_kmer[idx_position] = set_element;
@@ -177,8 +198,8 @@ public:
     if (_bf[bf_idx]) {
       // bf_idx + 1 because _brank start from position 0
       int kmer_rank = _brank(bf_idx + 1);
-      // storage in _set_index, the index, in position equals to k-mer's rank on
-      // bloom filter
+      // storage in _set_index, the index, in position equals to k-mer's rank
+      // on bloom filter
       _set_index[kmer_rank].push_back(input_idx);
 
       return true;
@@ -196,17 +217,17 @@ public:
   }
 
   // function that returns the indexes of a given k-mer
-  // FIXME: to improve this function you could avoid copying back a vector<int>
+  // FIXME: to improve this function you could avoid copying back a
+  // vector<int>
   //        and provide an iterator over _index_kmer instead.
 
-  vector<int> get_index(const string &kmer) {
+  IDView get_index(const string &kmer) {
     if (_mode != 2)
-      return {};
+      return IDView(0, 0, nullptr);
 
     uint64_t hash = _get_hash(kmer);
     size_t bf_idx = hash % _size;
     size_t rank_searched = _brank(bf_idx + 1);
-    vector<int> index_res;
     int start_pos = 0;
     int end_pos = 0;
     int bv_idx;
@@ -217,27 +238,20 @@ public:
       // for a single value _select_bv must be done in one step, because with
       // the steps below it fails for _select_bv(0)
       if (rank_searched == 1) {
-        bv_idx = _select_bv(1);
-        index_res.push_back(_index_kmer[bv_idx]);
-        return index_res;
+        start_pos = 0;
+        end_pos = _select_bv(rank_searched);
       } else {
         start_pos = _select_bv(rank_searched - 1) + 1;
         end_pos = _select_bv(rank_searched);
       }
 
       // output vector
-      // FIXME if a k-mer has no indexes the function returns a vector with only
-      // one 0
-      // FIXME how to handle this situation? is the main that has to manage it?
-      for (int i = start_pos; i <= end_pos; i++) {
-        index_res.push_back(_index_kmer[i]);
-      }
-
-      return index_res;
+      // FIXME if a k-mer has no indexes the function returns a vector with
+      // only one 0
+      // FIXME how to handle this situation? is the main that has to manage
+      // it?
     }
-    return {};
-    // FIXME: return an empty vector? (return vector<int>())
-    // throw an exception?
+    return IDView(start_pos, end_pos, this);
   }
 
 private:
