@@ -38,6 +38,7 @@ read-filter
 *.fa
 *.txt
 *.bed
+*.tsv
 
 # Emacs files
 *~
