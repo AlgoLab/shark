@@ -98,7 +98,8 @@ int main(int argc, char *argv[]) {
   seconds = (time_reading / 1000) % 60;
   minutes = (int)((time_reading / (1000 * 60)) % 60);
 
-  cout << "Time to process transcripts:  " << minutes << ":" << seconds << endl;
+  std::cerr << "Time to process transcripts:  " <<
+      minutes << ":" << seconds << std::endl;
 
   bloom.switch_mode(1);
 
@@ -130,18 +131,19 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  printf("return value: %d\n", file_line);
+  std::cerr << "return value: " << file_line << std::endl;
   kseq_destroy(seq);        // STEP 5: destroy seq
   gzclose(transcript_file); // STEP 6: close the file handler
 
-  cout << "Transcript indexes added to Bloom filter" << endl;
+  std::cerr << "Transcript indexes added to Bloom filter" << std::endl;
   time_t end_add_time = time(0);
   int time_adding = difftime(end_add_time, add_time) * 1000.0;
 
   seconds = (int)((time_adding / 1000) % 60);
   minutes = (int)((time_adding / (1000 * 60)) % 60);
 
-  cout << "Time to add indexes:  " << minutes << ":" << seconds << endl;
+  std::cerr << "Time to add indexes:  " <<
+      minutes << ":" << seconds << std::endl;
 
   bloom.switch_mode(2);
 
@@ -152,8 +154,8 @@ int main(int argc, char *argv[]) {
   map<int, int> classification_id;
   IDView id_kmer;
 
-  FILE * pFile;
-  pFile = fopen ("id_results.txt", "w");
+  // FILE * pFile;
+  // pFile = fopen ("id_results.txt", "w");
 
   // open .fq file that contains the reads
   read_file = gzopen(read_name.c_str(), "r"); // STEP 2: open the file handler
@@ -195,13 +197,14 @@ int main(int argc, char *argv[]) {
       if (it_class->second == max && it_class->second >3) {
         // legend_ID[it_class->first] is the name of the transcript, mapped
         // with index it_class->first
-       fwrite(seq->name.s, 1, seq->name.l, pFile);
-       fwrite("/1", 1, sizeof("/1"), pFile);
-       fwrite("\t", 1, sizeof("\t"), pFile);
-       fwrite((legend_ID.at(it_class->first)).c_str(), 1,
-       strlen((legend_ID.at(it_class->first)).c_str()), pFile);
-       fwrite("\n", 1, sizeof("\n"), pFile);
-       fflush(pFile);
+	  std::cout << seq->name.s << "\t" <<
+	      (legend_ID.at(it_class->first)).c_str() << "\n";
+       // fwrite(seq->name.s, 1, seq->name.l, pFile);
+       // fwrite("\t", 1, sizeof("\t"), pFile);
+       // fwrite((legend_ID.at(it_class->first)).c_str(), 1,
+       // strlen((legend_ID.at(it_class->first)).c_str()), pFile);
+       // fwrite("\n", 1, sizeof("\n"), pFile);
+       // fflush(pFile);
       }
     }
 
@@ -210,7 +213,7 @@ int main(int argc, char *argv[]) {
     read_kmers_vec.clear();
   }
 
-  fclose(pFile);
+  // fclose(pFile);
 
   printf("return value: %d\n", file_line);
   kseq_destroy(seq);  // STEP 5: destroy seq
