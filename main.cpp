@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
     transcript_name = argv[1];
     read_name = argv[2];
   } else {
-    cout << "Error in input" << endl;
+    std::cerr << "Error in input" << std::endl;
     return 1;
   }
 
@@ -55,12 +55,11 @@ int main(int argc, char *argv[]) {
   seq = kseq_init(transcript_file);         // STEP 3: initialize seq
   string input_seq;
   // open and read the .fa
-  while ((file_line = kseq_read(seq)) >=
-         0) { // STEP 4: read sequence of transcript
+  while ((file_line = kseq_read(seq)) >= 0) { // STEP 4: read sequence of transcript
 
     // seq name is the key map for the transcript, and has an assigned int
     input_seq = seq->seq.s;
-    //  cout << name_transcript << endl;
+    //  std::cerr << name_transcript << std::endl;
 
     if (input_seq.size() >= kmer_length) {
       legend_ID[mapped_ID] = seq->name.s;
@@ -84,11 +83,11 @@ int main(int argc, char *argv[]) {
     input_seq.clear();
   }
 
-  printf("return value: %d\n", file_line);
+  std::cerr << "return value: " << file_line << std::endl;
   kseq_destroy(seq);        // STEP 5: destroy seq
   gzclose(transcript_file); // STEP 6: close the file handler
 
-  cout << "Transcript file processed" << endl;
+  std::cerr << "Transcript file processed" << std::endl;
 
   int seconds = 0;
   int minutes = 0;
@@ -98,8 +97,8 @@ int main(int argc, char *argv[]) {
   seconds = (time_reading / 1000) % 60;
   minutes = (int)((time_reading / (1000 * 60)) % 60);
 
-  std::cerr << "Time to process transcripts:  " <<
-      minutes << ":" << seconds << std::endl;
+  std::cerr << "Time to process transcripts:  "
+	    << minutes << ":" << seconds << std::endl;
 
   bloom.switch_mode(1);
 
@@ -142,8 +141,8 @@ int main(int argc, char *argv[]) {
   seconds = (int)((time_adding / 1000) % 60);
   minutes = (int)((time_adding / (1000 * 60)) % 60);
 
-  std::cerr << "Time to add indexes:  " <<
-      minutes << ":" << seconds << std::endl;
+  std::cerr << "Time to add indexes:  "
+	    << minutes << ":" << seconds << std::endl;
 
   bloom.switch_mode(2);
 
@@ -197,8 +196,8 @@ int main(int argc, char *argv[]) {
       if (it_class->second == max && it_class->second >3) {
         // legend_ID[it_class->first] is the name of the transcript, mapped
         // with index it_class->first
-	  std::cout << seq->name.s << "\t" <<
-	      (legend_ID.at(it_class->first)).c_str() << "\n";
+	  std::cout << seq->name.s << "\t"
+		    << (legend_ID.at(it_class->first)).c_str() << "\n";
        // fwrite(seq->name.s, 1, seq->name.l, pFile);
        // fwrite("\t", 1, sizeof("\t"), pFile);
        // fwrite((legend_ID.at(it_class->first)).c_str(), 1,
@@ -215,19 +214,19 @@ int main(int argc, char *argv[]) {
 
   // fclose(pFile);
 
-  printf("return value: %d\n", file_line);
+  std::cerr << "return value: " << file_line << std::endl;
   kseq_destroy(seq);  // STEP 5: destroy seq
   gzclose(read_file); // STEP 6: close the file handler
 
-  cout << "Association done." << endl;
+  std::cerr << "Association done." << std::endl;
   time_t end_assoc_time = time(0);
   int time_assoc = difftime(end_assoc_time, association_time) * 1000.0;
 
   seconds = (int)((time_assoc / 1000) % 60);
   minutes = (int)((time_assoc / (1000 * 60)) % 60);
 
-  cout << "Time to associate reads to transcript:  " << minutes << ":"
-       << seconds << endl;
+  std::cerr << "Time to associate reads to transcript:  "
+	    << minutes << ":" << seconds << std::endl;
 
   time_t end = time(0);
   int time_proc = difftime(end, start) * 1000.0;
@@ -235,14 +234,14 @@ int main(int argc, char *argv[]) {
   seconds = (int)((time_proc / 1000) % 60);
   minutes = (int)((time_proc / (1000 * 60)) % 60);
 
-  cout << "Time of entire process:  " << minutes << ":" << seconds << endl;
+  std::cerr << "Time of entire process:  " << minutes << ":" << seconds << std::endl;
 
-  cout << "Reading transcripts: " << (int)(time_reading / time_proc) * 100
-       << endl;
-  cout << "Adding indexes to BF: " << (int)(time_adding / time_proc) * 100
-       << endl;
-  cout << "Associating reads to transcript: "
-       << (int)(time_assoc / time_proc) * 100 << endl;
+  std::cerr << "Reading transcripts: " << (int)(time_reading / time_proc) * 100
+	    << std::endl;
+  std::cerr << "Adding indexes to BF: " << (int)(time_adding / time_proc) * 100
+	    << std::endl;
+  std::cerr << "Associating reads to transcript: "
+	    << (int)(time_assoc / time_proc) * 100 << std::endl;
 
   return 0;
 }
