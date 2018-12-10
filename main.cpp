@@ -155,7 +155,8 @@ int main(int argc, char *argv[]) {
 
   // FILE * pFile;
   // pFile = fopen ("id_results.txt", "w");
-
+  ofstream file;
+  file.open("reads_all_indexes.csv");
   // open .fq file that contains the reads
   read_file = gzopen(read_name.c_str(), "r"); // STEP 2: open the file handler
   seq = kseq_init(read_file);                 // STEP 3: initialize seq
@@ -183,29 +184,39 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    int max = std::max(std::max_element(begin(classification_id), end(classification_id),
-                                         [](const std::pair<int, int> &a, const std::pair<int, int> &b) {
-                                           return a.second < b.second;
-                                         })->second,
-                        (int)3);
+   // int max = std::max(std::max_element(begin(classification_id), end(classification_id),
+    //                                     [](const std::pair<int, int> &a, const std::pair<int, int> &b) {
+     //                                      return a.second < b.second;
+      //                                   })->second,
+       //                 (int)3);
     // save in file all headers of transcripts probably associated to the read
     // search and store in a file all elements of classification with
     // max(classification[i])
-    for (auto it_class = classification_id.cbegin();
-         it_class != classification_id.cend(); it_class++) {
-      if (it_class->second == max && it_class->second >3) {
+   // for (auto it_class = classification_id.cbegin();
+   //      it_class != classification_id.cend(); it_class++) {
+   //   if (it_class->second == max && it_class->second >3) {
         // legend_ID[it_class->first] is the name of the transcript, mapped
         // with index it_class->first
-	  std::cout << seq->name.s << "\t"
-		    << (legend_ID.at(it_class->first)).c_str() << "\n";
+	 // std::cout << seq->name.s << "\t"
+	//	    << (legend_ID.at(it_class->first)).c_str() << "\n";
+       
        // fwrite(seq->name.s, 1, seq->name.l, pFile);
        // fwrite("\t", 1, sizeof("\t"), pFile);
        // fwrite((legend_ID.at(it_class->first)).c_str(), 1,
        // strlen((legend_ID.at(it_class->first)).c_str()), pFile);
        // fwrite("\n", 1, sizeof("\n"), pFile);
        // fflush(pFile);
+//      }
+      file << seq->name.s;
+      for(auto it_class = classification_id.cbegin(); it_class != classification_id.cend();it_class++){
+      	if(it_class->second > 3){
+      		file << ",";
+      		file << legend_ID.at(it_class->first);
+			file << ",";
+			file << it_class->second;
+      	}
       }
-    }
+      file << "\n";
 
     classification_id.clear();
     id_kmer.clear();
@@ -213,6 +224,7 @@ int main(int argc, char *argv[]) {
   }
 
   // fclose(pFile);
+  file.close();
 
   std::cerr << "return value: " << file_line << std::endl;
   kseq_destroy(seq);  // STEP 5: destroy seq

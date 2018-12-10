@@ -39,6 +39,7 @@ read-filter
 *.txt
 *.bed
 *.tsv
+*.csv
 
 # Emacs files
 *~
