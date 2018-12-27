@@ -58,39 +58,37 @@ int main(int argc, char *argv[]) {
   size_t kmer_length = 31;
   vector<string> transcript_kmers_vec;
   BF bloom(sizebloom);
-  //  string transcript_name = "";
-  //  string read_name = "";
   int threshold;
+  bool double_argument = false;
+  string transcript_name;
+  string read_name;
+  string transcript_name2;
+
 
   time_t start = time(0);
 
-  /*
+
     if (argc > 1) {
-      transcript_name = argv[1];
-      read_name = argv[2];
+    	for(int i =0; i < argc; i++){
+    	string option = argv[i];
+    		if (option == "-s1")
+    			transcript_name = argv[i+1];
+    		if (option == "-r")
+    			read_name = argv[i+1];
+    		if (option == "-s2"){
+    			double_argument = true;
+    			transcript_name2 = argv[i+1];
+    		}
+    	}
     } else {
       std::cerr << "Error in input" << std::endl;
       return 1;
     }
-  */
 
-  if (cmdOptionExists(argv, argv + argc, "-r")) {
-    char *read_name = getCmdOption(argv, argv + argc, "-r");
-  } else {
-    cout << "Missing READ file" << endl;
-    return 1;
-  }
-  if (cmdOptionExists(argv, argv + argc, "-s1")) {
-    char *transcript_name = getCmdOption(argv, argv + argc, "-s1");
-  } else {
-    cout << "Missing TRANSCRIPT file" << endl;
-    return 1;
-  }
-  if (cmdOptionExists(argv, argv + argc, "-s2")) {
-    char *transcript_name2 = getCmdOption(argv, argv + argc, "-s2");
-  }
-
-  int choice;
+	cout << transcript_name << endl;
+	cout << read_name << endl;
+	cout << transcript_name2 << endl;
+/*  int choice;
   int userk_l;
   int thr;
   bool flag_choice = false;
@@ -119,12 +117,14 @@ int main(int argc, char *argv[]) {
       break;
     }
   } while (choice != 3);
-
-  if (!flag_choice)
+*/
+//  if (!flag_choice)
     threshold = 33;
   cout << kmer_length << endl;
   cout << threshold << endl;
+  
   time_t read_time = time(0);
+
 
   transcript_file =
       gzopen(transcript_name.c_str(), "r"); // STEP 2: open the file handler
@@ -163,10 +163,10 @@ int main(int argc, char *argv[]) {
   std::cerr << "return value: " << file_line << std::endl;
   kseq_destroy(seq);        // STEP 5: destroy seq
   gzclose(transcript_file); // STEP 6: close the file handler
-
-  if (transcript_name2 != NULL) {
+  cout << mapped_ID << endl;
+  if (double_argument) {
     transcript_file =
-        gzopen(transcript_name.c_str(), "r"); // STEP 2: open the file handler
+        gzopen(transcript_name2.c_str(), "r"); // STEP 2: open the file handler
     seq = kseq_init(transcript_file);         // STEP 3: initialize seq
     string input_seq;
     // open and read the .fa
@@ -204,6 +204,7 @@ int main(int argc, char *argv[]) {
   }
 
   std::cerr << "Transcript file processed" << std::endl;
+  cout << mapped_ID << endl;
 
   int seconds = 0;
   int minutes = 0;
@@ -249,9 +250,9 @@ int main(int argc, char *argv[]) {
   std::cerr << "return value: " << file_line << std::endl;
   kseq_destroy(seq);        // STEP 5: destroy seq
   gzclose(transcript_file); // STEP 6: close the file handler
-
-  if (transcript_name2 != NULL) {
-    transcript_file = gzopen(transcript_name.c_str(), "r");
+  cout << idx << endl;
+  if (double_argument) {
+    transcript_file = gzopen(transcript_name2.c_str(), "r");
     seq = kseq_init(transcript_file);
 
     // open and read the .fa, every time a kmer is found the relative index is
@@ -291,7 +292,7 @@ int main(int argc, char *argv[]) {
 
   std::cerr << "Time to add indexes:  " << minutes << ":" << seconds
             << std::endl;
-
+  cout << idx << endl;
   bloom.switch_mode(2);
 
   time_t association_time = time(0);
