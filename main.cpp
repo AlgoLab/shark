@@ -1,17 +1,19 @@
-#include "bloomfilter.h"
-#include "kseq.h"
-#include "sdsl/int_vector.hpp"
-#include "sdsl/int_vector.hpp" // for the bit_vector class
-#include "sdsl/util.hpp"
-#include <algorithm>
-#include <fstream>
-#include <iostream>
-#include <stdio.h>
-#include <string>
-#include <vector> // std::vector
+#include "bloomfilter.h" 
+#include "kseq.h" 
+#include "sdsl/int_vector.hpp" 
+#include "sdsl/int_vector.hpp" // for the bit_vector class 
+#include "sdsl/util.hpp" 
+#include <algorithm> 
+#include <fstream> 
+#include <iostream> 
+#include <stdio.h> 
+#include <string> 
+#include <vector> // std::vector 
 #include <zlib.h>
 
 static size_t sizebloom = (10e8);
+
+
 
 // function search, returns indexes in a vector
 IDView search(const string &kmer, BF &bloomfilter) {
@@ -30,9 +32,9 @@ void print_menu() {
   cout << "Choice: ";
 }
 
-
 // STEP 1: declare the type of file handler and the read() function
 KSEQ_INIT(gzFile, gzread)
+
 
 /*****************************************
  * Main
@@ -60,7 +62,7 @@ int main(int argc, char *argv[]) {
     if (argc > 1) {
     	for(int i =0; i < argc; i++){
     	string option = argv[i];
-    		if (option == "-r")
+    		if (option == "-t")
     			transcript_name = argv[i+1];
     		if (option == "-r1")
     			read_name = argv[i+1];
@@ -76,41 +78,11 @@ int main(int argc, char *argv[]) {
 
 	cout << transcript_name << endl;
 	cout << read_name << endl;
-	cout << transcript_name2 << endl;
-/*  int choice;
-  int userk_l;
-  int thr;
-  bool flag_choice = false;
-  do {
+	cout << read_name2 << endl;
 
-    print_menu();
-    cin >> choice;
-
-    switch (choice) {
-    case 1:
-      cout << "Insert k value: ";
-      cin >> userk_l;
-      kmer_length = userk_l;
-      break;
-    case 2:
-      flag_choice = true;
-      cout << "Insert threshold: ";
-      cin >> thr;
-      threshold = thr;
-      break;
-    case 3:
-      cout << "Launching tool..." << endl;
-      break;
-    default:
-      cout << "Wrong choice" << endl;
-      break;
-    }
-  } while (choice != 3);
-*/
-//  if (!flag_choice)
-    threshold = 33;
-  cout << kmer_length << endl;
-  cout << threshold << endl;
+  threshold = 33;
+  cout << "K-mer length: " << kmer_length << endl;
+  cout << "Threshold value: " << threshold << endl;
   
   time_t read_time = time(0);
 
@@ -159,6 +131,7 @@ int main(int argc, char *argv[]) {
 
   int seconds = 0;
   int minutes = 0;
+  int hour = 0;
   time_t end_read_time = time(0);
   int time_reading = difftime(end_read_time, read_time) * 1000.0;
 
@@ -216,18 +189,19 @@ int main(int argc, char *argv[]) {
   bloom.switch_mode(2);
 
   time_t association_time = time(0);
+  
+  FILE * pFile;
+  string output_file_name = "id_results_test2.tsv";
+  pFile = fopen (output_file_name.c_str(), "w");
+  //ofstream file;
+  //file.open(output_file_name);
   gzFile read_file;
   string read_seq;
   vector<string> read_kmers_vec;
   map<int, int> classification_id;
   IDView id_kmer;
 
-  //   FILE * pFile;
-  //   pFile = fopen ("id_results_test.tsv", "w");
-  ofstream file;
-  file.open("id_results.tsv");
-
-  // open .fq file that contains the reads
+// open .fq file that contains the reads
   read_file = gzopen(read_name.c_str(), "r"); // STEP 2: open the file handler
   seq = kseq_init(read_file);                 // STEP 3: initialize seq
 
@@ -268,16 +242,16 @@ int main(int argc, char *argv[]) {
     for (auto it_class = classification_id.cbegin();
          it_class != classification_id.cend(); it_class++) {
       if (it_class->second == max && it_class->second >= threshold) {
-        // legend_ID[it_class->first] is the name of the transcript, mapped
+        // legendid[it_class->first] is the name of the transcript, mapped
         /// with index it_class->first
-        file << seq->name.s << "\t" << (legend_ID.at(it_class->first)).c_str()
-             << "\n";
-        //       fwrite(seq->name.s, 1, seq->name.l, pFile);
-        //       fwrite("\t", 1, sizeof("\t"), pFile);
-        //       fwrite((legend_ID.at(it_class->first)).c_str(), 1,
-        //       strlen((legend_ID.at(it_class->first)).c_str()), pFile);
-        //       fwrite("\n", 1, sizeof("\n"), pFile);
-        //       fflush(pFile);
+        //file << seq->name.s << "\t" << (legend_ID.at(it_class->first)).c_str()
+        //     << "\n";
+               fwrite(seq->name.s, 1, seq->name.l, pFile);
+               fwrite("\t", 1, sizeof("\t"), pFile);
+               fwrite((legend_ID.at(it_class->first)).c_str(), 1,
+               strlen((legend_ID.at(it_class->first)).c_str()), pFile);
+               fwrite("\n", 1, sizeof("\n"), pFile);
+               fflush(pFile);
       }
     }
     classification_id.clear();
@@ -291,8 +265,12 @@ int main(int argc, char *argv[]) {
   kseq_destroy(seq);  // STEP 5: destroy seq
   gzclose(read_file); // STEP 6: close the file handler
 
+  if(double_argument){
+  string read_seq;
+  vector<string> read_kmers_vec;
+  map<int, int> classification_id;
+  IDView id_kmer;
 
-if(double_argument){
 // open .fq file that contains the reads
   read_file = gzopen(read_name2.c_str(), "r"); // STEP 2: open the file handler
   seq = kseq_init(read_file);                 // STEP 3: initialize seq
@@ -334,16 +312,16 @@ if(double_argument){
     for (auto it_class = classification_id.cbegin();
          it_class != classification_id.cend(); it_class++) {
       if (it_class->second == max && it_class->second >= threshold) {
-        // legend_ID[it_class->first] is the name of the transcript, mapped
+        // legendid[it_class->first] is the name of the transcript, mapped
         /// with index it_class->first
-        file << seq->name.s << "\t" << (legend_ID.at(it_class->first)).c_str()
-             << "\n";
-        //       fwrite(seq->name.s, 1, seq->name.l, pFile);
-        //       fwrite("\t", 1, sizeof("\t"), pFile);
-        //       fwrite((legend_ID.at(it_class->first)).c_str(), 1,
-        //       strlen((legend_ID.at(it_class->first)).c_str()), pFile);
-        //       fwrite("\n", 1, sizeof("\n"), pFile);
-        //       fflush(pFile);
+        //file << seq->name.s << "\t" << (legend_ID.at(it_class->first)).c_str()
+        //     << "\n";
+               fwrite(seq->name.s, 1, seq->name.l, pFile);
+               fwrite("\t", 1, sizeof("\t"), pFile);
+               fwrite((legend_ID.at(it_class->first)).c_str(), 1,
+               strlen((legend_ID.at(it_class->first)).c_str()), pFile);
+               fwrite("\n", 1, sizeof("\n"), pFile);
+               fflush(pFile);
       }
     }
     classification_id.clear();
@@ -351,16 +329,23 @@ if(double_argument){
     read_kmers_vec.clear();
   }
 
-}
-  file.close();
+  fclose(pFile);
 
+  std::cerr << "return value: " << file_line << std::endl;
+  kseq_destroy(seq);  // STEP 5: destroy seq
+  gzclose(read_file); // STEP 6: close the file handler
+
+    }
+  //file.close();
+  
+  std::cerr << "Output file created:" << output_file_name << endl; 
   std::cerr << "Association done." << std::endl;
   time_t end_assoc_time = time(0);
   int time_assoc = difftime(end_assoc_time, association_time) * 1000.0;
 
   seconds = (int)((time_assoc / 1000) % 60);
   minutes = (int)((time_assoc / (1000 * 60)) % 60);
-
+  hour = (int) (minutes / 60);
   std::cerr << "Time to associate reads to transcript:  " << minutes << ":"
             << seconds << std::endl;
 
@@ -370,7 +355,7 @@ if(double_argument){
   seconds = (int)((time_proc / 1000) % 60);
   minutes = (int)((time_proc / (1000 * 60)) % 60);
 
-  std::cerr << "Time of entire process:  " << minutes << ":" << seconds
+  std::cerr << "Time of entire process:  " << hour << ":" << minutes << ":" << seconds
             << std::endl;
 
   std::cerr << "Reading transcripts: " << (int)(time_reading / time_proc) * 100
