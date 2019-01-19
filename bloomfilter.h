@@ -45,7 +45,7 @@ public:
   IDView &operator=(const IDView &rhs);
   ~IDView(){};
 
-  bool has_next() const { return _p < _e; }
+  bool has_next() const { return _p <= _e; }
   int_vector<64>::value_type get_next();
   size_t size() const { return _e - _b; }
   void clear();
