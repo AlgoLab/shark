@@ -8,6 +8,7 @@
 #include <sdsl/bit_vectors.hpp>
 #include <sdsl/int_vector.hpp>
 #include <sdsl/select_support.hpp>
+#include <sdsl/util.hpp>
 #include <string>
 
 using namespace std;
@@ -145,7 +146,7 @@ public:
         _index_kmer = int_vector<64>(tot_idx);
         int idx_position = 0;
 
-        // i starts from 1 because the firse element in _set_index will always
+		// i starts from 1 because the firse element in _set_index will always
         // be an empty vector, because no k-mer has rank = 0
         for (size_t i = 1; i < _set_index.size(); i++) {
 
@@ -165,7 +166,7 @@ public:
           }
         }
 
-        // FIXME: compression of index k-mer
+		// FIXME: compression of index k-mer
         // util::bit_compress(_index_kmer);
 
         int pos = -1;
