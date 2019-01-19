@@ -36,6 +36,7 @@ make
 read-filter [-v] -t <transcripts> -1 <sample1> [-2 <sample2>] [-k <kmer_size>] [-c <confidence>]
       -h, --help            display this help and exit
       -t, --transcripts     transcripts in FASTA format (can be gzipped)
+      -a, --annotation      gene annotation in GTF format
       -1, --sample1         sample in FASTA/Q (can be gzipped)
       -2, --sample2         second sample in FASTA/Q (can be gzipped)
       -k, --kmer-size       size of the kmers to index (default:31)
