@@ -27,21 +27,21 @@ void pelapsed(const string &s = "") {
        << endl;
 }
 
-void analyze_read(const kseq_t *seq, BF &bloom, map<int, string> legend_ID, const uint &kmer_length) {
-  vector<string> read_kmers_vec;
+void analyze_read(const kseq_t *seq, BF &bloom, map<int, string> legend_ID, const uint &k, const uint &c) {
   map<int, int> classification_id;
-  IDView id_kmer;
   string read_seq = seq->seq.s;
 
-  if (read_seq.size() >= kmer_length) {
-    read_kmers_vec.resize(read_seq.size() - (kmer_length - 1));
-    transform(read_seq.cbegin(), read_seq.cend() - (kmer_length - 1),
-              read_kmers_vec.begin(), [kmer_length](const auto &i) {
-                return string(&i, kmer_length);
-              });
+  if (read_seq.size() >= k) {
+    string kmer (read_seq, 0, k);
+    transform(kmer.begin(), kmer.end(), kmer.begin(), ::toupper);
+    IDView id_kmer = bloom.get_index(kmer);
+    while (id_kmer.has_next())
+      ++classification_id[id_kmer.get_next()];
 
-    // search all kmers of each read in the BF and store relative indexes
-    for (auto &kmer : read_kmers_vec) {
+    for (uint p = k; p < read_seq.size(); ++p) {
+      char c = toupper(read_seq[p]);
+      kmer.erase(0, 1);
+      kmer += c;
       id_kmer = bloom.get_index(kmer);
       while (id_kmer.has_next())
         ++classification_id[id_kmer.get_next()];
@@ -95,14 +95,12 @@ int main(int argc, char *argv[]) {
   map<int, string> legend_ID;
   int file_line;
 
-  size_t kmer_length = opt::k;
-
   if(opt::verbose) {
     cerr << "Transcripts: " << opt::fasta_path << endl;
     cerr << "Sample 1: " << opt::sample1_path << endl;
     if(opt::paired_flag)
       cerr << "Sample 2: " << opt::sample2_path << endl;
-    cerr << "K-mer length: " << kmer_length << endl;
+    cerr << "K-mer length: " << opt::k << endl;
     cerr << "Threshold value: " << opt::c << endl << endl;
   }
 
@@ -118,18 +116,20 @@ int main(int argc, char *argv[]) {
     string input_seq = seq->seq.s;
     vector<string> transcript_kmers_vec;
 
-    if (input_seq.size() >= kmer_length) {
+    if (input_seq.size() >= opt::k) {
       legend_ID[mapped_ID] = input_name;
-      // split each sequence of a transcript in k-mer with k=n
-      transcript_kmers_vec.resize(input_seq.size() - (kmer_length - 1));
-      transform(input_seq.cbegin(), input_seq.cend() - (kmer_length - 1),
-                transcript_kmers_vec.begin(), [kmer_length](const auto &i) {
-                  return string(&i, kmer_length);
-                });
 
-      // add all k-mers to BF
-      for (auto &kmer : transcript_kmers_vec)
+      // Build kmers and add them to bf
+      string kmer (input_seq, 0, opt::k);
+      transform(kmer.begin(), kmer.end(), kmer.begin(), ::toupper);
+      bloom.add_kmer(kmer);
+      for (uint p = opt::k; p < input_seq.size(); ++p) {
+        char c = toupper(input_seq[p]);
+        kmer.erase(0, 1);
+        kmer += c;
         bloom.add_kmer(kmer);
+      }
+
       ++mapped_ID;
     }
   }
@@ -153,17 +153,17 @@ int main(int argc, char *argv[]) {
     string input_seq = seq->seq.s;
     vector<string> transcript_kmers_vec;
 
-    if (input_seq.size() >= kmer_length) {
-      // split each sequence of a transcritp in k-mer with k=n
-      transcript_kmers_vec.resize(input_seq.size() - (kmer_length - 1));
-      transform(input_seq.cbegin(), input_seq.cend() - (kmer_length - 1),
-                transcript_kmers_vec.begin(), [kmer_length](const auto &i) {
-                  return string(&i, kmer_length);
-                });
-
-      // add for each k-mer its id to BF
-      for (auto &kmer : transcript_kmers_vec)
+    if (input_seq.size() >= opt::k) {
+      // Build kmers and store their idx in the bf
+      string kmer (input_seq, 0, opt::k);
+      transform(kmer.begin(), kmer.end(), kmer.begin(), ::toupper);
+      bloom.add_to_kmer(kmer, idx);
+      for (uint p = opt::k; p < input_seq.size(); ++p) {
+        char c = toupper(input_seq[p]);
+        kmer.erase(0, 1);
+        kmer += c;
         bloom.add_to_kmer(kmer, idx);
+      }
 
       ++idx;
     }
@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
   // open file that contains the reads
   seq = kseq_init(read1_file);
   while ((file_line = kseq_read(seq)) >= 0) {
-    analyze_read(seq, bloom, legend_ID, opt::k);
+    analyze_read(seq, bloom, legend_ID, opt::k, opt::c);
   }
 
   kseq_destroy(seq);
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
     // open file that contains the reads
     seq = kseq_init(read2_file);
     while ((file_line = kseq_read(seq)) >= 0) {
-      analyze_read(seq, bloom, legend_ID, opt::k);
+      analyze_read(seq, bloom, legend_ID, opt::k, opt::c);
     }
 
     kseq_destroy(seq);
