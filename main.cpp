@@ -27,24 +27,110 @@ void pelapsed(const string &s = "") {
        << endl;
 }
 
-void analyze_read(const kseq_t *seq, BF &bloom, map<int, string> legend_ID, const uint &k, const uint &c) {
+/*** METHODS TO READ AND PARSE A GTF FILE *************************************/
+/**
+ * Given a gtf feature, returns the third (type) and the last
+ * (attributes) columns as a pair of strings.
+ **/
+pair<string, string> parse_line(string line) {
+  int i = 0;
+  string delimiter = "\t";
+  string token;
+  size_t pos;
+  string type = "";
+  string attributes = "";
+  while ((pos = line.find(delimiter)) != string::npos) {
+    ++i;
+    token = line.substr(0, pos);
+    line.erase(0, pos + delimiter.length());
+    if(i == 3)
+      type = token;
+  }
+  attributes = line;
+  return make_pair(type, attributes);
+}
+
+/**
+ * Given the attributes of a feature, returns the gene_id and the
+ * transcript_id as a pair of strings.
+ **/
+pair<string, string> parse_attributes(string line) {
+  string gene_idx = "";
+  string transcript_idx = "";
+
+  string gene_key = "gene_id";
+  string transcript_key = "transcript_id";
+
+  string delimiter = "; ";
+  string token;
+  size_t pos;
+
+  while ((pos = line.find(delimiter)) != string::npos) {
+    token = line.substr(0, pos);
+    line.erase(0, pos + delimiter.length());
+    if(token.compare(0, gene_key.size(), gene_key) == 0)
+      gene_idx = token.substr(gene_key.size()+2, token.size()-gene_key.size()-3);
+    else if(token.compare(0, transcript_key.size(), transcript_key) == 0)
+      transcript_idx = token.substr(transcript_key.size()+2, token.size()-transcript_key.size()-3);
+  }
+  if(line.compare(0, gene_key.size(), gene_key) == 0)
+    gene_idx = line.substr(gene_key.size()+2, line.size()-gene_key.size()-3);
+  else if(line.compare(0, transcript_key.size(), transcript_key) == 0)
+    transcript_idx = line.substr(transcript_key.size()+2, line.size()-transcript_key.size()-3);
+
+  return make_pair(gene_idx, transcript_idx);
+}
+
+/**
+ * Given a gtf file, extract a map <transcript_idx : gene_idx>
+ **/
+unordered_map<string, string> read_gtf(string gtf_path) {
+  unordered_map<string, string> transcriptidx2geneidx;
+
+  std::ifstream gtf;
+  std::string line;
+  gtf.open(gtf_path);
+  if(gtf.is_open()) {
+    while(getline(gtf,line)) {
+      pair<string, string> type_attributes = parse_line(line);
+      if(type_attributes.first.compare("transcript") == 0) {
+        pair<string, string> gene_transcript = parse_attributes(type_attributes.second);
+        transcriptidx2geneidx[gene_transcript.second] = gene_transcript.first;
+      }
+    }
+  }
+  gtf.close();
+  return transcriptidx2geneidx;
+}
+
+/******************************************************************************/
+
+void analyze_read(const kseq_t *seq, BF &bloom, vector<string> legend_ID, const uint &k, const uint &c) {
   map<int, int> classification_id;
   string read_seq = seq->seq.s;
 
   if (read_seq.size() >= k) {
     string kmer (read_seq, 0, k);
     transform(kmer.begin(), kmer.end(), kmer.begin(), ::toupper);
+    // cout << kmer << endl;
     IDView id_kmer = bloom.get_index(kmer);
-    while (id_kmer.has_next())
-      ++classification_id[id_kmer.get_next()];
+    while (id_kmer.has_next()) {
+      int x = id_kmer.get_next();
+      // cout << "- " << x << endl;
+      ++classification_id[x];
+    }
 
     for (uint p = k; p < read_seq.size(); ++p) {
       char c = toupper(read_seq[p]);
       kmer.erase(0, 1);
       kmer += c;
+      // cout << kmer << endl;
       id_kmer = bloom.get_index(kmer);
-      while (id_kmer.has_next())
-        ++classification_id[id_kmer.get_next()];
+      while (id_kmer.has_next()) {
+        int x = id_kmer.get_next();
+        // cout << "- " << x << endl;
+        ++classification_id[x];
+      }
     }
   }
 
@@ -59,12 +145,11 @@ void analyze_read(const kseq_t *seq, BF &bloom, map<int, string> legend_ID, cons
   // save in file all headers of transcripts probably associated to the read
   // search and store in a file all elements of classification with
   // max(classification[i])
-  for (auto it_class = classification_id.cbegin();
-       it_class != classification_id.cend(); ++it_class) {
+  for (auto it_class = classification_id.cbegin(); it_class != classification_id.cend(); ++it_class) {
     if (it_class->second == max && it_class->second >= opt::c) {
       // legendid[it_class->first] is the name of the transcript, mapped
       /// with index it_class->first
-      cout << seq->name.s << "\t" << legend_ID.at(it_class->first) << endl;
+      cout << seq->name.s << "\t" << legend_ID[it_class->first] << "\t" << read_seq << endl;
     }
   }
 }
@@ -80,6 +165,11 @@ int main(int argc, char *argv[]) {
   gzFile transcript_file = gzopen(opt::fasta_path.c_str(), "r");
   kseq_t *seq = kseq_init(transcript_file);
 
+  // Annotation
+  std::ifstream gtf;
+  gtf.open(opt::gtf_path);
+  gtf.close();
+
   // Sample 1
   gzFile read1_file = gzopen(opt::sample1_path.c_str(), "r");
   seq = kseq_init(read1_file);
@@ -92,11 +182,12 @@ int main(int argc, char *argv[]) {
   }
 
   BF bloom(opt::bf_size);
-  map<int, string> legend_ID;
+  vector<string> legend_ID;
   int file_line;
 
   if(opt::verbose) {
     cerr << "Transcripts: " << opt::fasta_path << endl;
+    cerr << "Annotation: " << opt::gtf_path << endl;
     cerr << "Sample 1: " << opt::sample1_path << endl;
     if(opt::paired_flag)
       cerr << "Sample 2: " << opt::sample2_path << endl;
@@ -104,21 +195,17 @@ int main(int argc, char *argv[]) {
     cerr << "Threshold value: " << opt::c << endl << endl;
   }
 
+  // Map <transcript_idx : gene_idx>
+  unordered_map<string, string> transcriptidx2geneidx = read_gtf(opt::gtf_path);
+
   /****************************************************************************/
 
   /*** 1. First iteration over transcripts ************************************/
-  // open and read the .fa
   seq = kseq_init(transcript_file);
-  int mapped_ID = 0;
   while ((file_line = kseq_read(seq)) >= 0) {
-    // seq name is the key map for the transcript, and has an assigned int
-    string input_name = seq->name.s;
     string input_seq = seq->seq.s;
-    vector<string> transcript_kmers_vec;
 
     if (input_seq.size() >= opt::k) {
-      legend_ID[mapped_ID] = input_name;
-
       // Build kmers and add them to bf
       string kmer (input_seq, 0, opt::k);
       transform(kmer.begin(), kmer.end(), kmer.begin(), ::toupper);
@@ -129,15 +216,13 @@ int main(int argc, char *argv[]) {
         kmer += c;
         bloom.add_kmer(kmer);
       }
-
-      ++mapped_ID;
     }
   }
 
   kseq_destroy(seq);
   gzclose(transcript_file);
 
-  pelapsed("Transcript file processed (" + to_string(mapped_ID) + ")");
+  pelapsed("Transcript file processed");
 
   bloom.switch_mode(1);
 
@@ -146,40 +231,48 @@ int main(int argc, char *argv[]) {
   /*** 2. Second iteration over transcripts ***********************************/
   transcript_file = gzopen(opt::fasta_path.c_str(), "r");
   seq = kseq_init(transcript_file);
-  int idx = 0;
+  string last_gene_idx = "";
+  int nidx = -1;
   // open and read the .fa, every time a kmer is found the relative index is
   // added to BF
   while ((file_line = kseq_read(seq)) >= 0) {
+    string input_name = seq->name.s;
+    input_name = input_name.substr(0, input_name.size()-2);
     string input_seq = seq->seq.s;
-    vector<string> transcript_kmers_vec;
 
     if (input_seq.size() >= opt::k) {
-      // Build kmers and store their idx in the bf
+      // Storing a numeric ID for each gene
+      if(transcriptidx2geneidx[input_name] != last_gene_idx) {
+        ++nidx;
+        legend_ID.push_back(transcriptidx2geneidx[input_name]);
+        last_gene_idx = transcriptidx2geneidx[input_name];
+      }
+
+      // Build kmers and store their nidx in the bf
       string kmer (input_seq, 0, opt::k);
       transform(kmer.begin(), kmer.end(), kmer.begin(), ::toupper);
-      bloom.add_to_kmer(kmer, idx);
+      // cout << "# " << kmer << " " << nidx << endl;
+      bloom.add_to_kmer(kmer, nidx);
       for (uint p = opt::k; p < input_seq.size(); ++p) {
         char c = toupper(input_seq[p]);
         kmer.erase(0, 1);
         kmer += c;
-        bloom.add_to_kmer(kmer, idx);
+        // cout << "# " << kmer << " " << nidx << endl;
+        bloom.add_to_kmer(kmer, nidx);
       }
-
-      ++idx;
     }
   }
 
   kseq_destroy(seq);
   gzclose(transcript_file);
 
-  pelapsed("BF created from transcripts");
+  pelapsed("BF created from transcripts (" + to_string(nidx) + " genes)");
 
   bloom.switch_mode(2);
 
   /****************************************************************************/
 
   /*** 3. Iteration over first sample *****************************************/
-  // open file that contains the reads
   seq = kseq_init(read1_file);
   while ((file_line = kseq_read(seq)) >= 0) {
     analyze_read(seq, bloom, legend_ID, opt::k, opt::c);
@@ -196,7 +289,6 @@ int main(int argc, char *argv[]) {
   if(opt::paired_flag){
     read2_file = gzopen(opt::sample2_path.c_str(), "r");
 
-    // open file that contains the reads
     seq = kseq_init(read2_file);
     while ((file_line = kseq_read(seq)) >= 0) {
       analyze_read(seq, bloom, legend_ID, opt::k, opt::c);

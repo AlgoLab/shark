@@ -10,6 +10,7 @@ static const char *USAGE_MESSAGE =
   "\n"
   "      -h, --help                        display this help and exit\n"
   "      -t, --transcripts                 transcripts in FASTA format (can be gzipped)\n"
+  "      -a, --annotation                  gene annotation in GTF format\n"
   "      -1, --sample1                     sample in FASTA/Q (can be gzipped)\n"
   "      -2, --sample2                     second sample in FASTA/Q (can be gzipped)\n"
   "      -k, --kmer-size                   size of the kmers to index (default:31)\n"
@@ -20,6 +21,7 @@ static const char *USAGE_MESSAGE =
 
 namespace opt {
   static std::string fasta_path = "";
+  static std::string gtf_path = "";
   static std::string sample1_path = "";
   static std::string sample2_path = "";
   static bool paired_flag = false;
@@ -29,10 +31,11 @@ namespace opt {
   static bool verbose = false;
 }
 
-static const char *shortopts = "t:1:2:k:c:vh";
+static const char *shortopts = "t:a:1:2:k:c:vh";
 
 static const struct option longopts[] = {
   {"transcripts", required_argument, NULL, 't'},
+  {"annotation", required_argument, NULL, 'a'},
   {"sample1", required_argument, NULL, '1'},
   {"sample2", required_argument, NULL, '2'},
   {"kmer-size", required_argument, NULL, 'k'},
@@ -49,6 +52,9 @@ void parse_arguments(int argc, char **argv) {
     switch (c) {
     case 't':
       arg >> opt::fasta_path;
+      break;
+    case 'a':
+      arg >> opt::gtf_path;
       break;
     case '1':
       arg >> opt::sample1_path;
@@ -81,7 +87,7 @@ void parse_arguments(int argc, char **argv) {
     }
   }
 
-  if (opt::fasta_path == "" || opt::sample1_path == "") {
+  if (opt::fasta_path == "" || opt::gtf_path == "" || opt::sample1_path == "") {
     std::cerr << "read-filter : missing required files" << std::endl;
     std::cerr << "\n" << USAGE_MESSAGE;
     exit(EXIT_FAILURE);
