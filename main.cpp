@@ -29,6 +29,7 @@ void pelapsed(const string &s = "") {
 
 /*** METHODS TO READ AND PARSE A GTF FILE *************************************/
 /**
+ * !!! I'm assuming a GTF from ensembl !!!
  * Given a gtf feature, returns the third (type) and the last
  * (attributes) columns as a pair of strings.
  **/
@@ -237,7 +238,17 @@ int main(int argc, char *argv[]) {
   // added to BF
   while ((file_line = kseq_read(seq)) >= 0) {
     string input_name = seq->name.s;
-    input_name = input_name.substr(0, input_name.size()-2);
+    /**
+     * ! this is needed to remove inconsistency between transcript ids
+     * in the ensembl cdna (ending with .number) and ensembl annotation !
+     **/
+    size_t pos;
+    while ((pos = input_name.find(".")) != string::npos) {
+      input_name = input_name.substr(0, pos);
+      break;
+    }
+    // input_name = input_name.substr(0, input_name.size()-2); // this doesn't work if the number is >9
+
     string input_seq = seq->seq.s;
 
     if (input_seq.size() >= opt::k) {
@@ -266,7 +277,7 @@ int main(int argc, char *argv[]) {
   kseq_destroy(seq);
   gzclose(transcript_file);
 
-  pelapsed("BF created from transcripts (" + to_string(nidx) + " genes)");
+  pelapsed("BF created from transcripts (" + to_string(nidx+1) + " genes)");
 
   bloom.switch_mode(2);
 
