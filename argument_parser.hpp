@@ -31,7 +31,7 @@ namespace opt {
   static bool verbose = false;
 }
 
-static const char *shortopts = "t:a:1:2:k:c:vh";
+static const char *shortopts = "t:a:1:2:k:c:b:vh";
 
 static const struct option longopts[] = {
   {"transcripts", required_argument, NULL, 't'},
