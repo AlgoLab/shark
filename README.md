@@ -44,3 +44,11 @@ read-filter [-v] -t <transcripts> -1 <sample1> [-2 <sample2>] [-k <kmer_size>] [
       -b, --bf-size         bloom filter size in GB (default:1)
       -v, --verbose         verbose mode
 ```
+
+### Example
+```bash
+cd examples
+tar xfz chrY.tar.gz
+cd ..
+./read-filter -t examples/chrY/chrY.cdna.fa -a examples/chrY/chrY.gtf -1 examples/chrY/chrY_1.fq -2 examples/chrY/chrY_2.fq > examples/chrY/chrY.tsv
+```
