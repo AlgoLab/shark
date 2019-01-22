@@ -112,7 +112,7 @@ void analyze_read(const kseq_t *seq, BF &bloom, vector<string> legend_ID, const 
 
   if (read_seq.size() >= k) {
     string kmer (read_seq, 0, k);
-    transform(kmer.begin(), kmer.end(), kmer.begin(), ::toupper);
+    // transform(kmer.begin(), kmer.end(), kmer.begin(), ::toupper);
     // cout << kmer << endl;
     IDView id_kmer = bloom.get_index(kmer);
     while (id_kmer.has_next()) {
@@ -122,7 +122,7 @@ void analyze_read(const kseq_t *seq, BF &bloom, vector<string> legend_ID, const 
     }
 
     for (uint p = k; p < read_seq.size(); ++p) {
-      char c = toupper(read_seq[p]);
+      char c = read_seq[p]; //toupper(read_seq[p]);
       kmer.erase(0, 1);
       kmer += c;
       // cout << kmer << endl;
@@ -209,10 +209,10 @@ int main(int argc, char *argv[]) {
     if (input_seq.size() >= opt::k) {
       // Build kmers and add them to bf
       string kmer (input_seq, 0, opt::k);
-      transform(kmer.begin(), kmer.end(), kmer.begin(), ::toupper);
+      // transform(kmer.begin(), kmer.end(), kmer.begin(), ::toupper);
       bloom.add_kmer(kmer);
       for (uint p = opt::k; p < input_seq.size(); ++p) {
-        char c = toupper(input_seq[p]);
+        char c = input_seq[p]; //toupper(input_seq[p]);
         kmer.erase(0, 1);
         kmer += c;
         bloom.add_kmer(kmer);
@@ -261,11 +261,11 @@ int main(int argc, char *argv[]) {
 
       // Build kmers and store their nidx in the bf
       string kmer (input_seq, 0, opt::k);
-      transform(kmer.begin(), kmer.end(), kmer.begin(), ::toupper);
+      // transform(kmer.begin(), kmer.end(), kmer.begin(), ::toupper);
       // cout << "# " << kmer << " " << nidx << endl;
       bloom.add_to_kmer(kmer, nidx);
       for (uint p = opt::k; p < input_seq.size(); ++p) {
-        char c = toupper(input_seq[p]);
+        char c = input_seq[p]; //toupper(input_seq[p]);
         kmer.erase(0, 1);
         kmer += c;
         // cout << "# " << kmer << " " << nidx << endl;
