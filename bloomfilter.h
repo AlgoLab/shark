@@ -45,9 +45,13 @@ public:
   IDView &operator=(const IDView &rhs);
   ~IDView(){};
 
-  bool has_next() const { return _p < _e; }
+  bool has_next() const {
+  if(_p == _e)
+  	return true;
+  else
+  	return _p < _e; }
   int_vector<64>::value_type get_next();
-  size_t size() const { return _e - _b; }
+  size_t size() const { return _e - _b + 1; }
   void clear();
 };
 
@@ -112,9 +116,9 @@ public:
         // FIXME: +1 ? What happens if there are 0 kmers in the bf?
         // we need to add 1 because _set_index[0] will always be empty,
         // because index 0 doesn't match any rank value
-        num_kmer = _brank.rank(_bf.size()) + 1;
+        num_kmer = _brank.rank(_bf.size());
 
-        if (num_kmer != 1)
+        if (num_kmer != 0)
           _set_index.resize(num_kmer, vector<int>());
         return true;
       } else
@@ -146,15 +150,13 @@ public:
         _index_kmer = int_vector<64>(tot_idx);
         int idx_position = 0;
 
-		// i starts from 1 because the firse element in _set_index will always
-        // be an empty vector, because no k-mer has rank = 0
-        for (size_t i = 1; i < _set_index.size(); i++) {
+        for (auto set : _set_index) {
 
           // _set_index[i].size != 0 because a vector in _set_index with size
           // 0 is an empty vector, and there are no indexes to add to
           // _index_kmer
-          if (_set_index[i].size() != 0) {
-            for (int &set_element : _set_index[i]) {
+          if ( set.size() != 0) {
+            for (int &set_element : set) {
               _index_kmer[idx_position] = set_element;
               idx_position++;
             }
@@ -171,8 +173,8 @@ public:
 
         int pos = -1;
         // set _bv elements to 1 at the end of each index range
-        for (size_t i = 1; i < _set_index.size(); i++) {
-          pos += _set_index[i].size();
+        for (auto set : _set_index) {
+          pos += set.size();
           _bv[pos] = 1;
         }
         _select_bv = select_support_mcl<1>(&_bv);
@@ -197,8 +199,8 @@ public:
     size_t bf_idx = hash % _size;
 
     if (_bf[bf_idx]) {
-      // bf_idx + 1 because _brank start from position 0
-      int kmer_rank = _brank(bf_idx + 1);
+      // bf_idx + 1 because we need to include the 1 set in position bf_idx
+      int kmer_rank = _brank(bf_idx);
       // storage in _set_index, the index, in position equals to k-mer's rank
       // on bloom filter
       _set_index[kmer_rank].push_back(input_idx);
@@ -244,7 +246,6 @@ public:
         start_pos = _select_bv(rank_searched - 1) + 1;
         end_pos = _select_bv(rank_searched);
       }
-
       // output vector
       // FIXME if a k-mer has no indexes the function returns a vector with
       // only one 0

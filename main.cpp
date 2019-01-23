@@ -1,6 +1,6 @@
-#include "bloomfilter.h" 
-#include "kseq.h" 
-#include "sdsl/int_vector.hpp" 
+#include "bloomfilter.h"
+#include "kseq.h"
+#include "sdsl/int_vector.hpp"
 #include "sdsl/int_vector.hpp" // for the bit_vector class 
 #include "sdsl/util.hpp" 
 #include <algorithm> 
@@ -337,7 +337,7 @@ int main(int argc, char *argv[]) {
 
     }
   //file.close();
-  
+ 
   std::cerr << "Output file created:" << output_file_name << endl; 
   std::cerr << "Association done." << std::endl;
   time_t end_assoc_time = time(0);
