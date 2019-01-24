@@ -1,7 +1,7 @@
 #include "bloomfilter.h"
 #include "kseq.h"
 #include "sdsl/int_vector.hpp"
-#include "sdsl/int_vector.hpp" // for the bit_vector class 
+#include "sdsl/int_vector.hpp" // for the bit_vector class
 #include "sdsl/util.hpp" 
 #include <algorithm> 
 #include <fstream> 
@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
   time_t association_time = time(0);
   
   FILE * pFile;
-  string output_file_name = "id_results_test2.tsv";
+  string output_file_name = "id_results.tsv";
   pFile = fopen (output_file_name.c_str(), "w");
   //ofstream file;
   //file.open(output_file_name);
