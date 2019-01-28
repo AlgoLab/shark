@@ -127,7 +127,7 @@ public:
       if (_mode == 2) {
 
         // sorting indexes for each k-mer
-        for (auto set : _set_index)
+        for (auto &set : _set_index)
           if (set.size())
             sort(begin(set), end(set), less<int>());
 
@@ -137,7 +137,7 @@ public:
               unique(_set_index[i].begin(), _set_index[i].end()),
               _set_index[i].end());
 
-        for (auto set : _set_index)
+        for (auto &set : _set_index)
           tot_idx += set.size();
 
         _bv = bit_vector(tot_idx, 0);
@@ -146,7 +146,7 @@ public:
         _index_kmer = int_vector<64>(tot_idx);
         int idx_position = 0;
 
-        for (auto set : _set_index) {
+        for (auto &set : _set_index) {
 
           // _set_index[i].size != 0 because a vector in _set_index with size
           // 0 is an empty vector, and there are no indexes to add to
@@ -169,7 +169,7 @@ public:
 
         int pos = -1;
         // set _bv elements to 1 at the end of each index range
-        for (auto set : _set_index) {
+        for (auto &set : _set_index) {
           pos += set.size();
           _bv[pos] = 1;
         }
@@ -195,7 +195,6 @@ public:
     size_t bf_idx = hash % _size;
 
     if (_bf[bf_idx]) {
-      // bf_idx + 1 because we need to include the 1 set in position bf_idx
       int kmer_rank = _brank(bf_idx);
       // storage in _set_index, the index, in position equals to k-mer's rank
       // on bloom filter
