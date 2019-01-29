@@ -34,7 +34,7 @@ void analyze_read(const kseq_t *seq, BF &bloom, const vector<string> &legend_ID,
 
   if (read_seq.size() >= k) {
     string kmer (read_seq, 0, k);
-    // transform(kmer.begin(), kmer.end(), kmer.begin(), ::toupper);
+    transform(kmer.begin(), kmer.end(), kmer.begin(), ::toupper);
     IDView id_kmer = bloom.get_index(kmer);
     while (id_kmer.has_next()) {
       int x = id_kmer.get_next();
@@ -42,7 +42,7 @@ void analyze_read(const kseq_t *seq, BF &bloom, const vector<string> &legend_ID,
     }
 
     for (uint p = k; p < read_seq.size(); ++p) {
-      char c = read_seq[p]; //toupper(read_seq[p]);
+      char c = toupper(read_seq[p]);
       kmer.erase(0, 1);
       kmer += c;
       id_kmer = bloom.get_index(kmer);
