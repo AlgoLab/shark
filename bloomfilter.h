@@ -31,11 +31,12 @@ static const char RCN[128] = {
 };
 
 class BF;
+class KmerBuilder;
 
 class IDView {
 private:
-  size_t _b, _e;
-  size_t _p;
+  int _b, _e;
+  int _p;
   BF *_bf;
 
 public:
@@ -53,8 +54,9 @@ public:
 
 class BF {
   friend class IDView;
+  friend class KmerBuilder;
 
-private:
+public:
   static const char _rcc(const char &c) { return RCN[c]; }
 
   static const string _rc(const string &kmer) {
@@ -64,7 +66,7 @@ private:
     return rc;
   }
 
-  const string _minrc(const string &kmer) const { return min(kmer, _rc(kmer)); }
+  static const string _minrc(const string &kmer) { return min(kmer, _rc(kmer)); }
 
   uint64_t _get_hash(const string &kmer) const {
     string k = _minrc(kmer);
@@ -80,6 +82,12 @@ public:
   };
   ~BF() {}
 
+  void add_at(const uint64 p) {
+    if(!_check_mode) {
+      _bf[p % _size] = 1;
+    }
+  }
+  
   // function to add a k-mer to BF and initialize vectors
   void add_kmer(const string &kmer) {
     //_check_mode = false --> _mode = 0, user can add k-mers to BF
@@ -227,7 +235,7 @@ public:
     size_t bf_idx = hash % _size;
     size_t rank_searched = _brank(bf_idx + 1);
     int start_pos = 0;
-    int end_pos = 0;
+    int end_pos = -1;
 
     // select on _bv
     if (_bf[bf_idx]) {

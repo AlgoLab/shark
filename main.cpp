@@ -8,16 +8,20 @@
 #include <zlib.h>
 
 #include "kseq.h"
+KSEQ_INIT(gzFile, gzread)
 #include "sdsl/int_vector.hpp"
 #include "sdsl/int_vector.hpp"
 #include "sdsl/util.hpp"
 
 #include "argument_parser.hpp"
 #include "bloomfilter.h"
+#include "BloomfilterFiller.hpp"
+#include "KmerBuilder.hpp"
+#include "FastaSplitter.hpp"
+#include "ReadAnalyzer.hpp"
+#include "ReadOutput.hpp"
 
 using namespace std;
-
-KSEQ_INIT(gzFile, gzread)
 
 auto start_t = chrono::high_resolution_clock::now();
 
@@ -119,6 +123,16 @@ int main(int argc, char *argv[]) {
   /****************************************************************************/
 
   /*** 1. First iteration over transcripts ************************************/
+  // tbb::filter_t<void, vector<pair<string, string>>*>
+  //   tr(tbb::filter::serial_in_order, FastaSplitter(opt::fasta_path, 100));
+  // tbb::filter_t<vector<pair<string, string>>*, vector<uint64_t>*>
+  //   kb(tbb::filter::parallel, KmerBuilder(opt::k));
+  // tbb::filter_t<vector<uint64_t>*, void>
+  //   bff(tbb::filter::serial_out_of_order, BloomfilterFiller(&bloom));
+
+  // tbb::filter_t<void, void> pipeline = tr & kb & bff;
+  // tbb::parallel_pipeline(opt::nThreads, pipeline);
+
   seq = kseq_init(ref_file);
   while ((file_line = kseq_read(seq)) >= 0) {
     string input_seq = seq->seq.s;
@@ -183,13 +197,25 @@ int main(int argc, char *argv[]) {
   /****************************************************************************/
 
   /*** 3. Iteration over first sample *****************************************/
-  seq = kseq_init(read1_file);
-  while ((file_line = kseq_read(seq)) >= 0) {
-    analyze_read(seq, bloom, legend_ID, opt::k, opt::c);
-  }
+  gzFile f = gzopen(opt::sample1_path.c_str(), "r");
+  kseq_t *sseq = kseq_init(f);
+  tbb::filter_t<void, vector<pair<string, string>>*>
+    sr(tbb::filter::serial_in_order, FastaSplitter(sseq, 10000));
+  tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 3>>*>
+    ra(tbb::filter::parallel, ReadAnalyzer(&bloom, legend_ID, opt::k, opt::c));
+  tbb::filter_t<vector<array<string, 3>>*, void>
+    so(tbb::filter::serial_out_of_order, ReadOutput());
 
-  kseq_destroy(seq);
-  gzclose(read1_file);
+  tbb::filter_t<void, void> pipeline_reads = sr & ra & so;
+  tbb::parallel_pipeline(opt::nThreads, pipeline_reads);
+
+  // seq = kseq_init(read1_file);
+  // while ((file_line = kseq_read(seq)) >= 0) {
+  //   analyze_read(seq, bloom, legend_ID, opt::k, opt::c);
+  // }
+
+  kseq_destroy(sseq);
+  gzclose(f);
 
   pelapsed("First sample completed");
 

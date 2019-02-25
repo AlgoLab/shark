@@ -27,12 +27,14 @@ namespace opt {
   static int c = 20;
   static uint64_t bf_size = ((uint64_t)0b1 << 33);
   static bool verbose = false;
+  static int nThreads = 1;
 }
 
-static const char *shortopts = "t:1:2:k:c:b:vh";
+static const char *shortopts = "j:t:1:2:k:c:b:vh";
 
 static const struct option longopts[] = {
   {"transcripts", required_argument, NULL, 't'},
+  {"jobs", required_argument, NULL, 'j'},
   {"sample1", required_argument, NULL, '1'},
   {"sample2", required_argument, NULL, '2'},
   {"kmer-size", required_argument, NULL, 'k'},
@@ -49,6 +51,9 @@ void parse_arguments(int argc, char **argv) {
     switch (c) {
     case 't':
       arg >> opt::fasta_path;
+      break;
+    case 'j':
+      arg >> opt::nThreads;
       break;
     case '1':
       arg >> opt::sample1_path;
