@@ -20,6 +20,7 @@ KSEQ_INIT(gzFile, gzread)
 #include "FastaSplitter.hpp"
 #include "ReadAnalyzer.hpp"
 #include "ReadOutput.hpp"
+#include "kmer_utils.hpp"
 
 using namespace std;
 
@@ -30,59 +31,6 @@ void pelapsed(const string &s = "") {
   cerr << "[read-filter/" << s << "] Time elapsed "
        << chrono::duration_cast<chrono::milliseconds>(now_t - start_t).count()/1000
        << endl;
-}
-
-void analyze_read(const kseq_t *seq, BF &bloom, const vector<string> &legend_ID, const uint &k, const int &c) {
-  map<int, int> classification_id;
-  string read_seq = seq->seq.s;
-
-  if (read_seq.size() >= k) {
-    string kmer (read_seq, 0, k);
-    transform(kmer.begin(), kmer.end(), kmer.begin(), ::toupper);
-    IDView id_kmer = bloom.get_index(kmer);
-    while (id_kmer.has_next()) {
-      int x = id_kmer.get_next();
-      ++classification_id[x];
-    }
-
-    for (uint p = k; p < read_seq.size(); ++p) {
-      char c = toupper(read_seq[p]);
-      kmer.erase(0, 1);
-      kmer += c;
-      id_kmer = bloom.get_index(kmer);
-      while (id_kmer.has_next()) {
-        int x = id_kmer.get_next();
-        ++classification_id[x];
-      }
-    }
-  }
-
-  int max = std::max(max_element(begin(classification_id),
-                                 end(classification_id),
-                                 [](const pair<int, int> &a,
-                                    const pair<int, int> &b) {
-                                   return a.second < b.second;
-                                 })
-                     ->second,
-                     (int)3);
-  // save in file all headers of transcripts probably associated to the read
-  // search and store in a file all elements of classification with
-  // max(classification[i])
-
-  if(max >= c) {
-    unordered_set<string> output_names;
-    for (auto it_class = classification_id.cbegin(); it_class != classification_id.cend(); ++it_class) {
-      if (it_class->second == max) {
-        string associated_name = legend_ID[it_class->first];
-        if(output_names.find(associated_name) == output_names.end()) {
-          // legendid[it_class->first] is the name of the transcript, mapped
-          /// with index it_class->first
-          output_names.insert(associated_name);
-          cout << seq->name.s << " " << associated_name << " " << read_seq << endl;
-        }
-      }
-    }
-  }
 }
 
 /*****************************************
@@ -109,7 +57,7 @@ int main(int argc, char *argv[]) {
 
   BF bloom(opt::bf_size);
   vector<string> legend_ID;
-  int file_line;
+  int seq_len;
 
   if(opt::verbose) {
     cerr << "Reference texts: " << opt::fasta_path << endl;
@@ -144,38 +92,45 @@ int main(int argc, char *argv[]) {
 
   pelapsed("First switch performed");
   /****************************************************************************/
-
+                                                                        \
   /*** 2. Second iteration over transcripts ***********************************/
   ref_file = gzopen(opt::fasta_path.c_str(), "r");
   seq = kseq_init(ref_file);
   int nidx = 0;
   // open and read the .fa, every time a kmer is found the relative index is
   // added to BF
-  while ((file_line = kseq_read(seq)) >= 0) {
+  while ((seq_len = kseq_read(seq)) >= 0) {
     string input_name = seq->name.s;
-    string input_seq = seq->seq.s;
+    legend_ID.push_back(input_name);
 
-    if (input_seq.size() >= opt::k) {
-      // Build kmers and store their nidx in the bf
-      string kmer (input_seq, 0, opt::k);
-      // transform(kmer.begin(), kmer.end(), kmer.begin(), ::toupper);
-      bloom.add_to_kmer(kmer, nidx);
-      for (uint p = opt::k; p < input_seq.size(); ++p) {
-        char c = input_seq[p]; //toupper(input_seq[p]);
-        kmer.erase(0, 1);
-        kmer += c;
-        bloom.add_to_kmer(kmer, nidx);
+    if ((uint)seq_len >= opt::k) {
+      int _p = 0;
+      uint64_t kmer = build_kmer(seq->seq.s, &_p, opt::k);
+      if(kmer == (uint64_t)-1) continue;
+      uint64_t rckmer = revcompl(kmer, opt::k);
+      bloom.add_to_kmer(min(kmer, rckmer), nidx);
+      for (int p = _p; p < seq_len; ++p) {
+        uint8_t new_char = to_int[seq->seq.s[p]];
+        if(new_char == 0) { // Found a char different from A, C, G, T
+          ++p; // we skip this character then we build a new kmer
+          kmer = build_kmer(seq->seq.s, &p, opt::k);
+          if(kmer == (uint64_t)-1) break;
+          rckmer = revcompl(kmer, opt::k);
+          --p; // p must point to the ending position of the kmer, it will be incremented by the for
+        } else {
+          --new_char; // A is 1 but it should be 0
+          kmer = lsappend(kmer, new_char, opt::k);
+          rckmer = rsprepend(rckmer, reverse_char(new_char), opt::k);
+        }
+        bloom.add_to_kmer(min(kmer, rckmer), nidx);
       }
     }
-
-    legend_ID.push_back(input_name);
     ++nidx;
   }
-
   kseq_destroy(seq);
   gzclose(ref_file);
 
-  pelapsed("BF created from transcripts (" + to_string(nidx+1) + " genes)");
+  pelapsed("BF created from transcripts (" + to_string(nidx) + " genes)");
 
   bloom.switch_mode(2);
   pelapsed("Second switch performed");
@@ -194,11 +149,6 @@ int main(int argc, char *argv[]) {
 
   tbb::filter_t<void, void> pipeline_reads = sr & ra & so;
   tbb::parallel_pipeline(opt::nThreads, pipeline_reads);
-
-  // seq = kseq_init(read1_file);
-  // while ((file_line = kseq_read(seq)) >= 0) {
-  //   analyze_read(seq, bloom, legend_ID, opt::k, opt::c);
-  // }
 
   kseq_destroy(sseq);
   gzclose(f);
@@ -220,9 +170,6 @@ int main(int argc, char *argv[]) {
       so2(tbb::filter::serial_out_of_order, ReadOutput());
     tbb::filter_t<void, void> pipeline_reads2 = sr2 & ra2 & so2;
     tbb::parallel_pipeline(opt::nThreads, pipeline_reads2);
-    // while ((file_line = kseq_read(seq)) >= 0) {
-    //   analyze_read(seq, bloom, legend_ID, opt::k, opt::c);
-    // }
 
     kseq_destroy(sseq);
     gzclose(read2_file);

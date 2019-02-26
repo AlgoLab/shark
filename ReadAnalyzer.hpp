@@ -2,6 +2,7 @@
 #define READANALYZER_HPP
 
 #include "bloomfilter.h"
+#include "kmer_utils.hpp"
 #include <vector>
 #include <array>
 
@@ -25,51 +26,53 @@ public:
       string read_name = p.first;
       string read_seq = p.second;
       if(read_seq.size() >= k) {
-        string kmer(read_seq, 0, k);
-        transform(kmer.begin(), kmer.end(), kmer.begin(), ::toupper);
-        IDView id_kmer = bf->get_index(kmer);
-        while (id_kmer.has_next()) {
-          int x = id_kmer.get_next();
-          ++classification_id[x];
-        }
-        for (uint p = 1; p < read_seq.size() - k + 1; ++p) {
-	  kmer = read_seq.substr(p, k);
-          // char c = toupper(read_seq[p]);
-          // kmer.erase(0, 1);
-          // kmer += c;
-	  transform(kmer.begin(), kmer.end(), kmer.begin(), ::toupper);
-          id_kmer = bf->get_index(kmer);
-          while (id_kmer.has_next()) {
-            int x = id_kmer.get_next();
-            ++classification_id[x];
+        int _pos = 0;
+        uint64_t kmer = build_kmer(read_seq, &_pos, k);
+        if(kmer == (uint64_t)-1) continue;
+        uint64_t rckmer = revcompl(kmer, k);
+        IDView id_kmer = bf->get_index(min(kmer, rckmer));
+        while (id_kmer.has_next())
+          ++classification_id[id_kmer.get_next()];
+
+        for (int pos = _pos; pos < (int)read_seq.size(); ++pos) {
+          uint8_t new_char = to_int[read_seq[pos]];
+          if(new_char == 0) { // Found a char different from A, C, G, T
+            ++pos; // we skip this character then we build a new kmer
+            kmer = build_kmer(read_seq, &pos, k);
+            if(kmer == (uint64_t)-1) break;
+            rckmer = revcompl(kmer, k);
+            --pos; // p must point to the ending position of the kmer, it will be incremented by the for
+          } else {
+            --new_char; // A is 1 but it should be 0
+            kmer = lsappend(kmer, new_char, k);
+            rckmer = rsprepend(rckmer, reverse_char(new_char), k);
           }
+          id_kmer = bf->get_index(min(kmer, rckmer));
+          while (id_kmer.has_next())
+            ++classification_id[id_kmer.get_next()];
         }
       }
-      int max = std::max(max_element(begin(classification_id),
-                                     end(classification_id),
-                                     [](const pair<int, int> &a,
-                                        const pair<int, int> &b) {
-                                       return a.second < b.second;
-                                     })
-                         ->second,
-                         (int)3);
+
+      int max = 0;
+      set<int> genes_idx;
+      for(map<int,int>::iterator it=classification_id.begin(); it!=classification_id.end(); ++it) {
+        if(it->second == max) {
+          genes_idx.insert(it->first);
+        } else if(it->second > max) {
+          genes_idx.clear();
+          max = it->second;
+          genes_idx.insert(it->first);
+        }
+      }
+
       if(max >= c) {
-        unordered_set<string> output_names;
-	map<int, int>::iterator p = std::find_if(classification_id.begin(), classification_id.end(),
-						 [&](const pair<int, int> & elem){ return elem.second == max; } );
-	while(p != classification_id.end()) {
-	  string associated_name = legend_ID[p->first];
-	  if(output_names.find(associated_name) == output_names.end()) {
-	    output_names.insert(associated_name);
-	    array<string, 3> elem;
-	    elem[0] = read_name;
-	    elem[1] = associated_name;
-	    elem[2] = read_seq;
-	    associations->push_back(elem);
-	  }
-	  p = std::find_if(std::next(p,1), classification_id.end(),
-			   [&](const pair<int, int> & elem){ return elem.second == max; } );
-	}
+        for(const auto &idx : genes_idx) {
+          array<string, 3> elem;
+          elem[0] = read_name;
+          elem[1] = idx;
+          elem[2] = read_seq;
+          associations->push_back(elem);
+        }
       }
     }
     delete reads;
@@ -79,5 +82,5 @@ public:
       return NULL;
   }
 };
-      
+
 #endif

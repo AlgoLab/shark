@@ -14,22 +14,6 @@
 using namespace std;
 using namespace sdsl;
 
-static const char RCN[128] = {
-    0,   0,   0, 0,   0,   0,   0,   0,   0,   0,   // 0
-    0,   0,   0, 0,   0,   0,   0,   0,   0,   0,   // 10
-    0,   0,   0, 0,   0,   0,   0,   0,   0,   0,   // 20
-    0,   0,   0, 0,   0,   0,   0,   0,   0,   0,   // 30
-    0,   0,   0, 0,   0,   0,   0,   0,   0,   0,   // 40
-    0,   0,   0, 0,   0,   0,   0,   0,   0,   0,   // 50
-    0,   0,   0, 0,   0,   'T', 0,   'G', 0,   0,   // 60
-    0,   'C', 0, 0,   0,   0,   0,   0,   'N', 0,   // 70
-    0,   0,   0, 0,   'A', 0,   0,   0,   0,   0,   // 80
-    0,   0,   0, 0,   0,   0,   0,   'T', 0,   'G', // 90
-    0,   0,   0, 'G', 0,   0,   0,   0,   0,   0,   // 100
-    'N', 0,   0, 0,   0,   0,   'A', 0,   0,   0,   // 110
-    0,   0,   0, 0,   0,   0,   0,   0              // 120
-};
-
 class BF;
 class KmerBuilder;
 class BloomfilterFiller;
@@ -59,27 +43,16 @@ class BF {
   friend class BloomfilterFiller;
 
 public:
-  static const char _rcc(const char &c) { return RCN[c]; }
-
-  static const string _rc(const string &kmer) {
-    string rc(kmer);
-    transform(rc.begin(), rc.end(), rc.begin(), _rcc);
-    reverse(rc.begin(), rc.end());
-    return rc;
-  }
-
-  static const string _minrc(const string &kmer) { return min(kmer, _rc(kmer)); }
-
-  uint64_t _get_hash(const string &kmer) const {
-    string k = _minrc(kmer);
+  uint64_t _get_hash(const uint64_t &kmer) const {
+    const uint64_t *key = &kmer;
     array<uint64_t, 2> hashes;
-    MurmurHash3_x64_128(k.c_str(), k.size(), 0,
+    MurmurHash3_x64_128(key, sizeof(uint64_t), 0,
                         reinterpret_cast<void *>(&hashes));
     return hashes[0];
   }
 
 public:
-  BF(const size_t size) : _mode(0), _check_mode(false), _bf(size, 0) {
+  BF(const size_t size) : _mode(0), _bf(size, 0) {
     _size = size;
   };
   ~BF() {}
@@ -87,175 +60,168 @@ public:
   void add_at(const uint64 p) {
     _bf[p] = 1;
   }
-  
-  // function to add a k-mer to BF and initialize vectors
-  void add_kmer(const string &kmer) {
-    //_check_mode = false --> _mode = 0, user can add k-mers to BF
-    if (!_check_mode) {
+
+  // Function to add a k-mer to the BF
+  void add_kmer(const uint64_t &kmer) {
+    if (_mode == 0) {
       uint64_t hash = _get_hash(kmer);
       _bf[hash % _size] = 1;
     }
   }
 
-  // function to test the presence of a k-mer in the BF
-  bool test_kmer(const string &kmer) const {
+  // Function to test if a k-mer is in the BF
+  bool test_kmer(const uint64_t &kmer) const {
     uint64_t hash = _get_hash(kmer);
     return _bf[hash % _size];
   }
 
-  // switch between modes: 0 = add k-mer to BF, 1 = add indexes of k-mer, 2 =
-  // get indexes of k-mer
-  // it's not possible to go back to a previous mode
-  bool switch_mode(int user_input) {
-    int tot_idx = 0;
-    _mode = user_input;
-
-    // if check_mode is false the only mode used is _mode = 0
-    if (!_check_mode) {
-      if (_mode == 1) {
-        size_t num_kmer;
-        _check_mode = true;
-        _brank = rank_support_v<1>(&_bf);
-
-        // FIXME: +1 ? What happens if there are 0 kmers in the bf?
-        // we need to add 1 because _set_index[0] will always be empty,
-        // because index 0 doesn't match any rank value
-        num_kmer = _brank.rank(_bf.size());
-
-        if (num_kmer != 0)
-          _set_index.resize(num_kmer, vector<int>());
-        return true;
-      } else
-        return false;
-
-    } else if (_check_mode) {
-
-      // if check_mode is true _mode = 1 has been used
-
-      if (_mode == 2) {
-
-        // sorting indexes for each k-mer
-        for (auto &set : _set_index)
-          if (set.size())
-            sort(begin(set), end(set), less<int>());
-
-        // remove duplicates
-        for (size_t i = 0; i < _set_index.size(); i++)
-          _set_index[i].erase(
-              unique(_set_index[i].begin(), _set_index[i].end()),
-              _set_index[i].end());
-
-        for (auto &set : _set_index)
-          tot_idx += set.size();
-
-        _bv = bit_vector(tot_idx, 0);
-
-        // storage indexes in the int_vector
-        _index_kmer = int_vector<64>(tot_idx);
-        int idx_position = 0;
-
-        for (auto &set : _set_index) {
-
-          // _set_index[i].size != 0 because a vector in _set_index with size
-          // 0 is an empty vector, and there are no indexes to add to
-          // _index_kmer
-          if ( set.size() != 0) {
-            for (int &set_element : set) {
-              _index_kmer[idx_position] = set_element;
-              idx_position++;
-            }
-          } else {
-            // when a vector is empty we assign a 0 in _index_kmer (there is a
-            // k-mer in BF that has no indexes)
-            _index_kmer[idx_position] = 0;
-            idx_position++;
-          }
-        }
-
-		// FIXME: compression of index k-mer
-        // util::bit_compress(_index_kmer);
-
-        int pos = -1;
-        // set _bv elements to 1 at the end of each index range
-        for (auto &set : _set_index) {
-          pos += set.size();
-          _bv[pos] = 1;
-        }
-        _select_bv = select_support_mcl<1>(&_bv);
-
-        // TODO: release _set_index here
-        // is this the best way to do this?
-        _set_index.clear();
-        return true;
-      } else
-        return false;
-    } else
-      return false;
-  }
-
-  // add index of a given k-mer
-
-  bool add_to_kmer(const string &kmer, int input_idx) {
+  // Function to add index to a k-mer
+  bool add_to_kmer(const uint64_t &kmer, const int &input_idx) {
     if (_mode != 1)
       return false;
 
     uint64_t hash = _get_hash(kmer);
     size_t bf_idx = hash % _size;
-
     if (_bf[bf_idx]) {
       int kmer_rank = _brank(bf_idx);
-      // storage in _set_index, the index, in position equals to k-mer's rank
-      // on bloom filter
       _set_index[kmer_rank].push_back(input_idx);
-
       return true;
     }
     return false;
   }
 
-  // add a vector of indexes of a k-mer
-
-  bool multiple_add_to_kmer(const string &kmer, vector<int> idx_vector) {
-    for (size_t i = 0; i < idx_vector.size(); i++)
-      if (!add_to_kmer(kmer, idx_vector[i]))
-        return false;
+  // Function to add multiple indexes to a k-mer
+  bool multiple_add_to_kmer(const uint64_t &kmer, const vector<int> &idxs) {
+    // FIXME: can't we just use a single insert (range insertion)? Revert if it's wrong
+    if (_mode != 1)
+      return false;
+    uint64_t hash = _get_hash(kmer);
+    size_t bf_idx = hash % _size;
+    if (_bf[bf_idx]) {
+      int kmer_rank = _brank(bf_idx);
+      _set_index[kmer_rank].insert(idxs.begin(), idxs.begin(), idxs.end());
+    }
     return true;
   }
 
-  // function that returns the indexes of a given k-mer
-  // FIXME: to improve this function you could avoid copying back a
-  // vector<int>
-  //        and provide an iterator over _index_kmer instead.
+  // Function that returns the indexes of a given k-mer
+  IDView get_index(const uint64_t &kmer) {
+    int start_pos = 0;
+    int end_pos = -1; // in this way, if the kmer is not in the bf, the returned IDView has no next
 
-  IDView get_index(const string &kmer) {
     if (_mode != 2)
-      return IDView(0, 0, nullptr);
+      return IDView(start_pos, end_pos, nullptr);
 
     uint64_t hash = _get_hash(kmer);
     size_t bf_idx = hash % _size;
-    size_t rank_searched = _brank(bf_idx + 1);
-    int start_pos = 0;
-    int end_pos = -1;
-
-    // select on _bv
     if (_bf[bf_idx]) {
-
-      // for a single value _select_bv must be done in one step, because with
-      // the steps below it fails for _select_bv(0)
-      if (rank_searched == 1) {
+      size_t rank_searched = _brank(bf_idx + 1);
+      if (rank_searched == 1) { // idxs of the first kmer
         start_pos = 0;
         end_pos = _select_bv(rank_searched);
       } else {
         start_pos = _select_bv(rank_searched - 1) + 1;
         end_pos = _select_bv(rank_searched);
       }
-      // output vector
       // FIXME if a k-mer has no indexes the function returns a vector with
       // only one 0
       // FIXME how to handle this situation? is the main that has to manage
       // it?
+      // See also comment in switch_mode regarding dummy index
     }
     return IDView(start_pos, end_pos, this);
+  }
+
+  /**
+   * Method to switch between modes:
+   *  - 0: add k-mer to BF
+   *  - 1: add indexes to kmers
+   *  - 2: get indexes of k-mer
+   * Note: it's not possible to go back to a previous mode
+   **/
+  bool switch_mode(const int &new_mode) {
+    if(_mode == 0 and new_mode == 1) {
+      /**
+       * Here we initialize the vector that will contain, for each
+       * kmer, the set of idx associated to it. The idxs of the i-th
+       * kmer in the Bloom filter, will be at the i-th position in
+       * this vector. This vector is filled with the 'add_to_kmer'
+       * function.
+       **/
+      _mode = new_mode;
+      util::init_support(_brank,&_bf);
+      size_t num_kmer = _brank(_bf.size());
+      if (num_kmer != 0)
+        _set_index.resize(num_kmer, vector<int>());
+      return true;
+    } else if(_mode == 1 and new_mode == 2) {
+      _mode = new_mode;
+
+      // We compute how many idxs we have to store
+      int tot_idx = 0;
+      for (auto &set : _set_index) {
+        sort(set.begin(), set.end());
+        set.erase(unique(set.begin(), set.end()), set.end());
+        tot_idx += set.size();
+      }
+
+      /**
+       * We build a bit vector that stores the "sizes" of the sets
+       * associated to each kmer. The bv has a 1 at the end of each
+       * set.  Example: [{1,2}, {1,3,4}, {2}] -> 010011 Underlying
+       * data structure for the int_vector that store the
+       * concatenation of all the sets.
+       **/
+      _bv = bit_vector(tot_idx, 0);
+      int pos = -1;
+      for (auto &set : _set_index) {
+        pos += set.size();
+        _bv[pos] = 1;
+      }
+      util::init_support(_select_bv,&_bv);
+
+      /**
+       * We merge the idxs associated to each kmer into a single
+       * int_vector. This vector is the concatenation of the sets
+       * associated to each kmer.
+       **/
+      //int_vector<64> tmp_index_kmer(tot_idx); // uncompressed and temporary
+      _index_kmer = int_vector<64>(tot_idx);
+      int idx_position = 0;
+      for (const auto &set : _set_index) {
+        // FIXME: should we check if the set is empty? Maybe saving a
+        // dummy index (0)? If so, we cannot use 0 as an index for
+        // kmers. Maybe -1 is better. Moreover, in this way, the main
+        // must manage this (it decides the idx). Anyway, I (LD) think
+        // this can never happen in our context.
+        // if ( set.size() != 0) {
+        for (const int &set_element : set) {
+          //tmp_index_kmer[idx_position] = set_element;
+          _index_kmer[idx_position] = set_element;
+          ++idx_position;
+        }
+        // } else { tmp_index_kmer[idx_position] = 0; idx_position++; }
+      }
+
+      // _index_kmer = dac_vector<>(tmp_index_kmer);;
+      /**
+         On a small input (80 genes), dac compression seems the best one:
+           Vec, Size, MB
+           Orig, 7645238, 29.1643
+           VLC, 7645238, 8.76068 //vlc_vector
+           DAC, 7645238, 7.54858 // dav_vector
+           ENC_eliasdelta, 7645238, 24.4415 // enc_vector<coder::elias_delta>
+           ENC_eliasgamma, 7645238, 35.0523 // enc_vector<coder::elias_gamma>
+           ENC_fib, 7645238, 26.5783 // enc_vector<coder::fibonacci>
+           BitCompress, 1672395, 6.37969 // util::bit_compress()
+       **/
+
+      // FIXME: is this the best way to release _set_index?
+      vector<vector<int>>().swap(_set_index);
+      return true;
+    } else {
+      return false;
+    }
   }
 
 private:
@@ -265,12 +231,12 @@ private:
 
   size_t _size;
   int _mode;
-  bool _check_mode;
   bit_vector _bf;
   rank_support_v<1> _brank;
   bit_vector _bv;
   vector<vector<int>> _set_index;
   int_vector<64> _index_kmer;
+  //dac_vector<> _index_kmer;
   select_support_mcl<1> _select_bv;
 };
 
