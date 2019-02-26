@@ -15,8 +15,11 @@ public:
   BloomfilterFiller(BF *_bf) : bf(_bf) {}
 
   void operator()(vector<uint64_t> *positions) const {
-    for(const auto & p : *positions) {
-      bf->add_at(p);
+    if(positions) {
+      for(const auto & p : *positions) {
+        bf->add_at(p % bf->_size);
+      }
+      delete positions;
     }
   }
 

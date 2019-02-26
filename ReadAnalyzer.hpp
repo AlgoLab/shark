@@ -32,10 +32,12 @@ public:
           int x = id_kmer.get_next();
           ++classification_id[x];
         }
-        for (uint p = k; p < read_seq.size(); ++p) {
-          char c = toupper(read_seq[p]);
-          kmer.erase(0, 1);
-          kmer += c;
+        for (uint p = 1; p < read_seq.size() - k + 1; ++p) {
+	  kmer = read_seq.substr(p, k);
+          // char c = toupper(read_seq[p]);
+          // kmer.erase(0, 1);
+          // kmer += c;
+	  transform(kmer.begin(), kmer.end(), kmer.begin(), ::toupper);
           id_kmer = bf->get_index(kmer);
           while (id_kmer.has_next()) {
             int x = id_kmer.get_next();
@@ -53,22 +55,24 @@ public:
                          (int)3);
       if(max >= c) {
         unordered_set<string> output_names;
-        for (auto it_class = classification_id.cbegin();
-             it_class != classification_id.cend(); ++it_class) {
-          if (it_class->second == max) {
-            string associated_name = legend_ID[it_class->first];
-            if(output_names.find(associated_name) == output_names.end()) {
-              output_names.insert(associated_name);
-              array<string, 3> elem;
-              elem[0] = read_name;
-              elem[1] = associated_name;
-              elem[2] = read_seq;
-              associations->push_back(elem);
-            }
-          }
-        }
+	map<int, int>::iterator p = std::find_if(classification_id.begin(), classification_id.end(),
+						 [&](const pair<int, int> & elem){ return elem.second == max; } );
+	while(p != classification_id.end()) {
+	  string associated_name = legend_ID[p->first];
+	  if(output_names.find(associated_name) == output_names.end()) {
+	    output_names.insert(associated_name);
+	    array<string, 3> elem;
+	    elem[0] = read_name;
+	    elem[1] = associated_name;
+	    elem[2] = read_seq;
+	    associations->push_back(elem);
+	  }
+	  p = std::find_if(std::next(p,1), classification_id.end(),
+			   [&](const pair<int, int> & elem){ return elem.second == max; } );
+	}
       }
     }
+    delete reads;
     if(associations->size())
       return associations;
     else

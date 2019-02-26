@@ -32,6 +32,7 @@ static const char RCN[128] = {
 
 class BF;
 class KmerBuilder;
+class BloomfilterFiller;
 
 class IDView {
 private:
@@ -55,6 +56,7 @@ public:
 class BF {
   friend class IDView;
   friend class KmerBuilder;
+  friend class BloomfilterFiller;
 
 public:
   static const char _rcc(const char &c) { return RCN[c]; }
@@ -83,9 +85,7 @@ public:
   ~BF() {}
 
   void add_at(const uint64 p) {
-    if(!_check_mode) {
-      _bf[p % _size] = 1;
-    }
+    _bf[p] = 1;
   }
   
   // function to add a k-mer to BF and initialize vectors
