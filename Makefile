@@ -1,4 +1,4 @@
-CFLAGS	= -DNDEBUG -Wno-char-subscripts -Wall -O3 -std=c++14 -I. -I./sdsl-lite/build/include -I./htslib/htslib -I./KMC -fopenmp
+CFLAGS	= -DNDEBUG -march=native -Wno-char-subscripts -Wall -Ofast -std=c++14 -I. -I./sdsl-lite/build/include -I./htslib/htslib -I./KMC -fopenmp -fomit-frame-pointer -foptimize-strlen -faggressive-loop-optimizations -funroll-loops -funsafe-math-optimizations 
 #CFLAGS	= -g -Wno-char-subscripts -Wall -O0 -std=c++14 -I. -I./sdsl-lite/build/include -I./htslib/htslib -I./KMC -fopenmp
 CXXFLAGS= ${CFLAGS}
 LIBS = -L./sdsl-lite/build/lib -L./sdsl-lite/build/external/libdivsufsort/lib -L./htslib/ -lhts -lz -lsdsl -ldivsufsort -ldivsufsort64 -ltbb
