@@ -10,7 +10,7 @@ IDView &IDView::operator=(const IDView &rhs) {
   return *this;
 }
 
-int_vector<64>::value_type IDView::get_next() { return _bf->_index_kmer[_p++]; }
+int_vector<16>::value_type* IDView::get_next() { return &(_bf->_index_kmer[_p++]); }
 
 void IDView::clear() {
   _b = 0;

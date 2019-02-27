@@ -31,7 +31,7 @@ public:
   ~IDView(){};
 
   bool has_next() const {return _p <= _e; }
-  int_vector<64>::value_type get_next();
+  int_vector<16>::value_type* get_next();
   size_t size() const { return _e - _b + 1; }
   void clear();
 };
@@ -184,8 +184,8 @@ public:
        * int_vector. This vector is the concatenation of the sets
        * associated to each kmer.
        **/
-      //int_vector<64> tmp_index_kmer(tot_idx); // uncompressed and temporary
-      _index_kmer = int_vector<64>(tot_idx);
+      //int_vector<16> tmp_index_kmer(tot_idx); // uncompressed and temporary
+      _index_kmer = int_vector<16>(tot_idx);
       int idx_position = 0;
       for (const auto &set : _set_index) {
         // FIXME: should we check if the set is empty? Maybe saving a
@@ -234,7 +234,7 @@ private:
   rank_support_v<1> _brank;
   bit_vector _bv;
   vector<vector<int>> _set_index;
-  int_vector<64> _index_kmer;
+  int_vector<16> _index_kmer;
   //dac_vector<> _index_kmer;
   select_support_mcl<1> _select_bv;
 };

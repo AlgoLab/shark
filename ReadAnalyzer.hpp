@@ -32,7 +32,7 @@ public:
         uint64_t rckmer = revcompl(kmer, k);
         IDView id_kmer = bf->get_index(min(kmer, rckmer));
         while (id_kmer.has_next())
-          ++classification_id[id_kmer.get_next()];
+          ++classification_id[*(id_kmer.get_next())];
 
         for (int pos = _pos; pos < (int)read_seq.size(); ++pos) {
           uint8_t new_char = to_int[read_seq[pos]];
@@ -49,7 +49,7 @@ public:
           }
           id_kmer = bf->get_index(min(kmer, rckmer));
           while (id_kmer.has_next())
-            ++classification_id[id_kmer.get_next()];
+            ++classification_id[*(id_kmer.get_next())];
         }
       }
 
