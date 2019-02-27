@@ -9,12 +9,13 @@ static const char *USAGE_MESSAGE =
   "Top notch description of this tool\n"
   "\n"
   "      -h, --help                        display this help and exit\n"
-  "      -t, --transcripts                 transcripts in FASTA format (can be gzipped)\n"
+  "      -r, --reference                   reference sequences in FASTA format (can be gzipped)\n"
   "      -1, --sample1                     sample in FASTA/Q (can be gzipped)\n"
-  "      -2, --sample2                     second sample in FASTA/Q (can be gzipped)\n"
+  "      -2, --sample2                     second sample in FASTA/Q (optional, can be gzipped)\n"
   "      -k, --kmer-size                   size of the kmers to index (default:31)\n"
   "      -c, --confidence                  confidence for associating a read to a gene (default: 20)\n"
   "      -b, --bf-size                     bloom filter size in GB (default:1)\n"
+  "      -t, --threads                     number of threads (default:1)\n"
   "      -v, --verbose                     verbose mode\n"
   "\n";
 
@@ -30,11 +31,11 @@ namespace opt {
   static int nThreads = 1;
 }
 
-static const char *shortopts = "j:t:1:2:k:c:b:vh";
+static const char *shortopts = "t:r:1:2:k:c:b:vh";
 
 static const struct option longopts[] = {
-  {"transcripts", required_argument, NULL, 't'},
-  {"jobs", required_argument, NULL, 'j'},
+  {"reference", required_argument, NULL, 'r'},
+  {"threads", required_argument, NULL, 't'},
   {"sample1", required_argument, NULL, '1'},
   {"sample2", required_argument, NULL, '2'},
   {"kmer-size", required_argument, NULL, 'k'},
@@ -49,10 +50,10 @@ void parse_arguments(int argc, char **argv) {
   for (char c; (c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1; ) {
     std::istringstream arg(optarg != NULL ? optarg : "");
     switch (c) {
-    case 't':
+    case 'r':
       arg >> opt::fasta_path;
       break;
-    case 'j':
+    case 't':
       arg >> opt::nThreads;
       break;
     case '1':
