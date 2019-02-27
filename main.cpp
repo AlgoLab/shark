@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
     tbb::filter_t<void, vector<pair<string, string>>*>
       sr(tbb::filter::serial_in_order, FastaSplitter(sseq, 10000));
     tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 3>>*>
-      ra(tbb::filter::parallel, ReadAnalyzer(&bloom, opt::k, opt::c));
+      ra(tbb::filter::parallel, ReadAnalyzer(&bloom, &legend_ID, opt::k, opt::c));
     tbb::filter_t<vector<array<string, 3>>*, void>
       so(tbb::filter::serial_out_of_order, ReadOutput());
 
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
     tbb::filter_t<void, vector<pair<string, string>>*>
       sr2(tbb::filter::serial_in_order, FastaSplitter(sseq, 10000));
     tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 3>>*>
-      ra2(tbb::filter::parallel, ReadAnalyzer(&bloom, opt::k, opt::c));
+      ra2(tbb::filter::parallel, ReadAnalyzer(&bloom, &legend_ID, opt::k, opt::c));
     tbb::filter_t<vector<array<string, 3>>*, void>
       so2(tbb::filter::serial_out_of_order, ReadOutput());
     tbb::filter_t<void, void> pipeline_reads2 = sr2 & ra2 & so2;
