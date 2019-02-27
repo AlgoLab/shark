@@ -69,7 +69,7 @@ public:
         for(const auto &idx : genes_idx) {
           array<string, 3> elem;
           elem[0] = read_name;
-          elem[1] = idx;
+          elem[1] = legend_ID[idx];
           elem[2] = read_seq;
           associations->push_back(elem);
         }
