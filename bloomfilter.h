@@ -1,7 +1,6 @@
 #ifndef _BLOOM_FILTER_HPP
 #define _BLOOM_FILTER_HPP
 
-#include "KMC/kmc_api/kmc_file.h"
 #include "MurmurHash3.hpp"
 #include <algorithm>
 #include <array>
@@ -57,7 +56,7 @@ public:
   };
   ~BF() {}
 
-  void add_at(const uint64 p) {
+  void add_at(const uint64_t p) {
     _bf[p] = 1;
   }
 
