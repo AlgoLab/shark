@@ -17,7 +17,7 @@ static const uint8_t to_int[128] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0
                                     0, 0, 0, 0, 0, 0, 4, 0, 0, 0, // 110
                                     0, 0, 0, 0, 0, 0, 0, 0};      // 120
 
-uint8_t reverse_char(const uint8_t &c) {
+inline uint8_t reverse_char(const uint8_t &c) {
   return ((~c) & 3);
 }
 
@@ -52,11 +52,11 @@ int64_t build_kmer(const string &seq, int *p, const uint8_t &k) {
     return kmer;
 }
 
-uint64_t lsappend(const uint64_t &kmer, const uint8_t &c, const uint8_t &k) { // left shift and append
+inline uint64_t lsappend(const uint64_t &kmer, const uint8_t &c, const uint8_t &k) { // left shift and append
   return ((kmer << 2) | c) & (((uint64_t)1 << 2*k)-1);
 }
 
-uint64_t rsprepend(const uint64_t &kmer, const uint8_t &c, const uint8_t &k) { // right shift and prepend
+inline uint64_t rsprepend(const uint64_t &kmer, const uint8_t &c, const uint8_t &k) { // right shift and prepend
   return (kmer >> 2) | ((uint64_t)c << (2*k - 2));
 }
 

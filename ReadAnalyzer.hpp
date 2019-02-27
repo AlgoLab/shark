@@ -11,13 +11,12 @@ using namespace std;
 class ReadAnalyzer {
 private:
   BF *bf;
-  vector<string> legend_ID;
   uint k;
   int c;
 
 public:
-  ReadAnalyzer(BF *_bf, vector<string> &_legend_ID, uint _k, int _c) :
-    bf(_bf), legend_ID(_legend_ID), k(_k), c(_c) {}
+  ReadAnalyzer(BF *_bf, uint _k, int _c) :
+    bf(_bf), k(_k), c(_c) {}
 
   vector<array<string, 3>>* operator()(vector<pair<string, string>> *reads) const {
     vector<array<string, 3>> *associations = new vector<array<string, 3>>();

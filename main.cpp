@@ -71,20 +71,22 @@ int main(int argc, char *argv[]) {
   /****************************************************************************/
 
   /*** 1. First iteration over transcripts ************************************/
-  ref_file = gzopen(opt::fasta_path.c_str(), "r");
-  kseq_t *refseq = kseq_init(ref_file);
-  tbb::filter_t<void, vector<pair<string, string>>*>
-    tr(tbb::filter::serial_in_order, FastaSplitter(refseq, 100));
-  tbb::filter_t<vector<pair<string, string>>*, vector<uint64_t>*>
-    kb(tbb::filter::parallel, KmerBuilder(opt::k));
-  tbb::filter_t<vector<uint64_t>*, void>
-    bff(tbb::filter::serial_out_of_order, BloomfilterFiller(&bloom));
+  {
+    ref_file = gzopen(opt::fasta_path.c_str(), "r");
+    kseq_t *refseq = kseq_init(ref_file);
+    tbb::filter_t<void, vector<pair<string, string>>*>
+      tr(tbb::filter::serial_in_order, FastaSplitter(refseq, 100));
+    tbb::filter_t<vector<pair<string, string>>*, vector<uint64_t>*>
+      kb(tbb::filter::parallel, KmerBuilder(opt::k));
+    tbb::filter_t<vector<uint64_t>*, void>
+      bff(tbb::filter::serial_out_of_order, BloomfilterFiller(&bloom));
 
-  tbb::filter_t<void, void> pipeline = tr & kb & bff;
-  tbb::parallel_pipeline(opt::nThreads, pipeline);
+    tbb::filter_t<void, void> pipeline = tr & kb & bff;
+    tbb::parallel_pipeline(opt::nThreads, pipeline);
 
-  kseq_destroy(refseq);
-  gzclose(ref_file);
+    kseq_destroy(refseq);
+    gzclose(ref_file);
+  }
 
   pelapsed("Transcript file processed");
 
@@ -138,21 +140,22 @@ int main(int argc, char *argv[]) {
   /****************************************************************************/
 
   /*** 3. Iteration over first sample *****************************************/
-  gzFile f = gzopen(opt::sample1_path.c_str(), "r");
-  kseq_t *sseq = kseq_init(f);
-  tbb::filter_t<void, vector<pair<string, string>>*>
-    sr(tbb::filter::serial_in_order, FastaSplitter(sseq, 10000));
-  tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 3>>*>
-    ra(tbb::filter::parallel, ReadAnalyzer(&bloom, legend_ID, opt::k, opt::c));
-  tbb::filter_t<vector<array<string, 3>>*, void>
-    so(tbb::filter::serial_out_of_order, ReadOutput());
+  {
+    gzFile f = gzopen(opt::sample1_path.c_str(), "r");
+    kseq_t *sseq = kseq_init(f);
+    tbb::filter_t<void, vector<pair<string, string>>*>
+      sr(tbb::filter::serial_in_order, FastaSplitter(sseq, 10000));
+    tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 3>>*>
+      ra(tbb::filter::parallel, ReadAnalyzer(&bloom, opt::k, opt::c));
+    tbb::filter_t<vector<array<string, 3>>*, void>
+      so(tbb::filter::serial_out_of_order, ReadOutput());
 
-  tbb::filter_t<void, void> pipeline_reads = sr & ra & so;
-  tbb::parallel_pipeline(opt::nThreads, pipeline_reads);
+    tbb::filter_t<void, void> pipeline_reads = sr & ra & so;
+    tbb::parallel_pipeline(opt::nThreads, pipeline_reads);
 
-  kseq_destroy(sseq);
-  gzclose(f);
-
+    kseq_destroy(sseq);
+    gzclose(f);
+  }
   pelapsed("First sample completed");
 
   /****************************************************************************/
@@ -161,11 +164,11 @@ int main(int argc, char *argv[]) {
   if(opt::paired_flag){
     read2_file = gzopen(opt::sample2_path.c_str(), "r");
 
-    sseq = kseq_init(read2_file);
+    kseq_t *sseq = kseq_init(read2_file);
     tbb::filter_t<void, vector<pair<string, string>>*>
       sr2(tbb::filter::serial_in_order, FastaSplitter(sseq, 10000));
     tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 3>>*>
-      ra2(tbb::filter::parallel, ReadAnalyzer(&bloom, legend_ID, opt::k, opt::c));
+      ra2(tbb::filter::parallel, ReadAnalyzer(&bloom, opt::k, opt::c));
     tbb::filter_t<vector<array<string, 3>>*, void>
       so2(tbb::filter::serial_out_of_order, ReadOutput());
     tbb::filter_t<void, void> pipeline_reads2 = sr2 & ra2 & so2;

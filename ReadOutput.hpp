@@ -12,7 +12,8 @@ class ReadOutput {
   void operator()(vector<array<string, 3>> *associations) const {
     if(associations) {
       for(const auto & a : *associations) {
-        cout << a[0] << " " << a[1] << " " << a[2] << '\n';
+	printf("%s %s %s\n", a[0].c_str(), a[1].c_str(), a[2].c_str());
+        //cout << a[0] << " " << a[1] << " " << a[2] << '\n';
       }
       delete associations;
     }
