@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
     gzFile f = gzopen(opt::sample1_path.c_str(), "r");
     kseq_t *sseq = kseq_init(f);
     tbb::filter_t<void, vector<pair<string, string>>*>
-      sr(tbb::filter::serial_in_order, FastaSplitter(sseq, 10000));
+      sr(tbb::filter::serial_in_order, FastaSplitter(sseq, 50000));
     tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 3>>*>
       ra(tbb::filter::parallel, ReadAnalyzer(&bloom, &legend_ID, opt::k, opt::c));
     tbb::filter_t<vector<array<string, 3>>*, void>
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
 
     kseq_t *sseq = kseq_init(read2_file);
     tbb::filter_t<void, vector<pair<string, string>>*>
-      sr2(tbb::filter::serial_in_order, FastaSplitter(sseq, 10000));
+      sr2(tbb::filter::serial_in_order, FastaSplitter(sseq, 50000));
     tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 3>>*>
       ra2(tbb::filter::parallel, ReadAnalyzer(&bloom, &legend_ID, opt::k, opt::c));
     tbb::filter_t<vector<array<string, 3>>*, void>
