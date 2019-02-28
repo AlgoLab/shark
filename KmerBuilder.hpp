@@ -24,7 +24,7 @@ public:
       for(const auto & p : *texts) {
         if(p.second.size() >= k) {
           int _pos = 0;
-          kmer = build_kmer(p.second, &_pos, k);
+          kmer = build_kmer(p.second, _pos, k);
           if(kmer == (uint64_t)-1) continue;
           rckmer = revcompl(kmer, k);
           key = min(kmer, rckmer);
@@ -36,7 +36,7 @@ public:
             uint8_t new_char = to_int[p.second[pos]];
             if(new_char == 0) { // Found a char different from A, C, G, T
               ++pos; // we skip this character then we build a new kmer
-              kmer = build_kmer(p.second, &pos, k);
+              kmer = build_kmer(p.second, pos, k);
               if(kmer == (uint64_t)-1) break;
               rckmer = revcompl(kmer, k);
               --pos; // p must point to the ending position of the kmer, it will be incremented by the for

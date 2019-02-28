@@ -27,7 +27,7 @@ public:
       string read_seq = p.second;
       if(read_seq.size() >= k) {
         int _pos = 0;
-        uint64_t kmer = build_kmer(read_seq, &_pos, k);
+        uint64_t kmer = build_kmer(read_seq, _pos, k);
         if(kmer == (uint64_t)-1) continue;
         uint64_t rckmer = revcompl(kmer, k);
         IDView id_kmer = bf->get_index(min(kmer, rckmer));
@@ -38,7 +38,7 @@ public:
           uint8_t new_char = to_int[read_seq[pos]];
           if(new_char == 0) { // Found a char different from A, C, G, T
             ++pos; // we skip this character then we build a new kmer
-            kmer = build_kmer(read_seq, &pos, k);
+            kmer = build_kmer(read_seq, pos, k);
             if(kmer == (uint64_t)-1) break;
             rckmer = revcompl(kmer, k);
             --pos; // p must point to the ending position of the kmer, it will be incremented by the for

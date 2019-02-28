@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
 
     if ((uint)seq_len >= opt::k) {
       int _p = 0;
-      uint64_t kmer = build_kmer(seq->seq.s, &_p, opt::k);
+      uint64_t kmer = build_kmer(seq->seq.s, _p, opt::k);
       if(kmer == (uint64_t)-1) continue;
       uint64_t rckmer = revcompl(kmer, opt::k);
       bloom.add_to_kmer(min(kmer, rckmer), nidx);
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
         uint8_t new_char = to_int[seq->seq.s[p]];
         if(new_char == 0) { // Found a char different from A, C, G, T
           ++p; // we skip this character then we build a new kmer
-          kmer = build_kmer(seq->seq.s, &p, opt::k);
+          kmer = build_kmer(seq->seq.s, p, opt::k);
           if(kmer == (uint64_t)-1) break;
           rckmer = revcompl(kmer, opt::k);
           --p; // p must point to the ending position of the kmer, it will be incremented by the for
