@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
 
   /****************************************************************************/
 
-  /*** 1. First iteration over transcripts ************************************/
+  /*** 1. First iteration over input sequences ********************************/
   {
     ref_file = gzopen(opt::fasta_path.c_str(), "r");
     kseq_t *refseq = kseq_init(ref_file);
@@ -88,23 +88,20 @@ int main(int argc, char *argv[]) {
     gzclose(ref_file);
   }
 
-  pelapsed("Transcript file processed");
+  pelapsed("References file processed");
 
   bloom.switch_mode(1);
 
   pelapsed("First switch performed");
   /****************************************************************************/
                                                                         \
-  /*** 2. Second iteration over transcripts ***********************************/
+  /*** 2. Second iteration over input sequences *******************************/
   ref_file = gzopen(opt::fasta_path.c_str(), "r");
   seq = kseq_init(ref_file);
   int nidx = 0;
-  // open and read the .fa, every time a kmer is found the relative index is
-  // added to BF
+  int processed_seqs = 0;
   while ((seq_len = kseq_read(seq)) >= 0) {
     string input_name = seq->name.s;
-    legend_ID.push_back(input_name);
-
     if ((uint)seq_len >= opt::k) {
       int _p = 0;
       uint64_t kmer = build_kmer(seq->seq.s, _p, opt::k);
@@ -127,12 +124,24 @@ int main(int argc, char *argv[]) {
         bloom.add_to_kmer(min(kmer, rckmer), nidx);
       }
     }
-    ++nidx;
+    ++processed_seqs;
+    if(processed_seqs % opt::granularity == 0) {
+      if(opt::granularity != 1) input_name = to_string(nidx);
+      legend_ID.push_back(input_name);
+      ++nidx;
+    }
   }
+  // Managing last "bin"
+  if((float)processed_seqs / (float)opt::granularity > (float)nidx) {
+    legend_ID.push_back(to_string(nidx));
+  } else {
+    --nidx;
+  }
+
   kseq_destroy(seq);
   gzclose(ref_file);
 
-  pelapsed("BF created from transcripts (" + to_string(nidx) + " genes)");
+  pelapsed("BF created (with " + to_string(nidx+1) + " indices)");
 
   bloom.switch_mode(2);
   pelapsed("Second switch performed");

@@ -26,12 +26,13 @@ namespace opt {
   static bool paired_flag = false;
   static uint k = 31;
   static int c = 20;
+  static uint granularity = 1;
   static uint64_t bf_size = ((uint64_t)0b1 << 33);
   static bool verbose = false;
   static int nThreads = 1;
 }
 
-static const char *shortopts = "t:r:1:2:k:c:b:vh";
+static const char *shortopts = "t:r:1:2:k:c:b:g:vh";
 
 static const struct option longopts[] = {
   {"reference", required_argument, NULL, 'r'},
@@ -40,6 +41,7 @@ static const struct option longopts[] = {
   {"sample2", required_argument, NULL, '2'},
   {"kmer-size", required_argument, NULL, 'k'},
   {"confidence", required_argument, NULL, 'c'},
+  {"granularity", required_argument, NULL, 'g'},
   {"bf-size", required_argument, NULL, 'b'},
   {"verbose", no_argument, NULL, 'v'},
   {"help", no_argument, NULL, 'h'},
@@ -68,6 +70,9 @@ void parse_arguments(int argc, char **argv) {
       break;
     case 'c':
       arg >> opt::c;
+      break;
+    case 'g':
+      arg >> opt::granularity;
       break;
     case 'b':
       // Let's consider this as GB

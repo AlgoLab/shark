@@ -30,10 +30,10 @@ uint64_t revcompl(const uint64_t &kmer, const uint8_t k) {
 }
 
 int64_t build_kmer(const string &seq, int &p, const uint8_t k) {
-  for(int _p = p; _p < seq.size() && _p < p+k; ++_p) {
+  for(int _p = p; _p < (int)seq.size() && _p < p+k; ++_p) {
     if(to_int[seq[_p]] == 0) p = _p + 1;
   }
-  if(p+k > seq.size()) {
+  if(p+k > (int)seq.size()) {
     p = seq.size();
     return -1;
   }
