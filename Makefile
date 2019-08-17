@@ -4,10 +4,10 @@ LIBS = -L./sdsl-lite/build/lib -L./sdsl-lite/build/external/libdivsufsort/lib -l
 
 .PHONY: all
 
-all: read-filter
+all: shark
 
-read-filter: main.o bloomfilter.o MurmurHash3.o bloomfilter.h
-	@echo "* Linking read-filter"
+shark: main.o bloomfilter.o MurmurHash3.o bloomfilter.h
+	@echo "* Linking shark"
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(LDFLAGS)
 
 %.o: %.cpp

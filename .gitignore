@@ -23,7 +23,7 @@
 *.zip
 
 # Binaries
-read-filter
+shark
 
 # Folders
 /--force

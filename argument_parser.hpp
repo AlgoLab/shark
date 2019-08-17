@@ -5,7 +5,7 @@
 #include <getopt.h>
 
 static const char *USAGE_MESSAGE =
-  "Usage: read-filter [-v] -t <transcripts> -1 <sample1> [-2 <sample2>] [-k <kmer_size>] [-c <confidence>]\n"
+  "Usage: shark [-v] -t <transcripts> -1 <sample1> [-2 <sample2>] [-k <kmer_size>] [-c <confidence>]\n"
   "Top notch description of this tool\n"
   "\n"
   "      -h, --help                        display this help and exit\n"
@@ -81,14 +81,14 @@ void parse_arguments(int argc, char **argv) {
       std::cerr << USAGE_MESSAGE;
       exit(EXIT_SUCCESS);
     default:
-      std::cerr << "read-filter : unknown argument" << std::endl;
+      std::cerr << "shark : unknown argument" << std::endl;
       std::cerr << "\n" << USAGE_MESSAGE;
       exit(EXIT_FAILURE);
     }
   }
 
   if (opt::fasta_path == "" || opt::sample1_path == "") {
-    std::cerr << "read-filter : missing required files" << std::endl;
+    std::cerr << "shark : missing required files" << std::endl;
     std::cerr << "\n" << USAGE_MESSAGE;
     exit(EXIT_FAILURE);
   }

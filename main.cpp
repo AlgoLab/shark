@@ -28,7 +28,7 @@ auto start_t = chrono::high_resolution_clock::now();
 
 void pelapsed(const string &s = "") {
   auto now_t = chrono::high_resolution_clock::now();
-  cerr << "[read-filter/" << s << "] Time elapsed "
+  cerr << "[shark/" << s << "] Time elapsed "
        << chrono::duration_cast<chrono::milliseconds>(now_t - start_t).count()/1000
        << endl;
 }
