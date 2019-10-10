@@ -21,10 +21,12 @@ inline uint8_t reverse_char(const uint8_t c) {
   return ((~c) & 3);
 }
 
-uint64_t revcompl(const uint64_t &kmer, const uint8_t k) {
+uint64_t revcompl(uint64_t kmer, const uint8_t k) {
   uint64_t rckmer = 0;
-  for(uint8_t i = 0; i<=2*k - 2; ++(++i)) {
-    rckmer = (rckmer << 2) | (~(kmer >> i) & 3);
+  kmer = ~kmer;
+  for(uint i = 0; i < k; ++i) {
+    rckmer = (rckmer << 2) | (kmer & 3);
+    kmer >>= 2;
   }
   return rckmer;
 }
