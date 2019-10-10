@@ -151,9 +151,9 @@ int main(int argc, char *argv[]) {
     kseq_t *sseq = kseq_init(f);
     tbb::filter_t<void, vector<pair<string, string>>*>
       sr(tbb::filter::serial_in_order, FastaSplitter(sseq, 50000));
-    tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 3>>*>
-      ra(tbb::filter::parallel, ReadAnalyzer(&bloom, &legend_ID, opt::k, opt::c));
-    tbb::filter_t<vector<array<string, 3>>*, void>
+    tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 4>>*>
+      ra(tbb::filter::parallel, ReadAnalyzer(&bloom, legend_ID, opt::k, opt::c));
+    tbb::filter_t<vector<array<string, 4>>*, void>
       so(tbb::filter::serial_out_of_order, ReadOutput());
 
     tbb::filter_t<void, void> pipeline_reads = sr & ra & so;
@@ -173,9 +173,9 @@ int main(int argc, char *argv[]) {
     kseq_t *sseq = kseq_init(read2_file);
     tbb::filter_t<void, vector<pair<string, string>>*>
       sr2(tbb::filter::serial_in_order, FastaSplitter(sseq, 50000));
-    tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 3>>*>
-      ra2(tbb::filter::parallel, ReadAnalyzer(&bloom, &legend_ID, opt::k, opt::c));
-    tbb::filter_t<vector<array<string, 3>>*, void>
+    tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 4>>*>
+      ra2(tbb::filter::parallel, ReadAnalyzer(&bloom, legend_ID, opt::k, opt::c));
+    tbb::filter_t<vector<array<string, 4>>*, void>
       so2(tbb::filter::serial_out_of_order, ReadOutput());
     tbb::filter_t<void, void> pipeline_reads2 = sr2 & ra2 & so2;
     tbb::parallel_pipeline(opt::nThreads, pipeline_reads2);

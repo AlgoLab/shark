@@ -25,7 +25,7 @@ namespace opt {
   static std::string sample2_path = "";
   static bool paired_flag = false;
   static uint k = 31;
-  static int c = 20;
+  static double c = 0.8;
   static uint64_t bf_size = ((uint64_t)0b1 << 33);
   static bool verbose = false;
   static int nThreads = 1;
