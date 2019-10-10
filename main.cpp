@@ -43,16 +43,22 @@ int main(int argc, char *argv[]) {
   // Transcripts
   gzFile ref_file = gzopen(opt::fasta_path.c_str(), "r");
   kseq_t *seq = kseq_init(ref_file);
+  kseq_destroy(seq);
+  gzclose(ref_file);
 
   // Sample 1
   gzFile read1_file = gzopen(opt::sample1_path.c_str(), "r");
   seq = kseq_init(read1_file);
+  kseq_destroy(seq);
+  gzclose(read1_file);
 
   // Sample 2
   gzFile read2_file;
   if(opt::paired_flag) {
     read2_file = gzopen(opt::sample2_path.c_str(), "r");
     seq = kseq_init(read2_file);
+    kseq_destroy(seq);
+    gzclose(read2_file);
   }
 
   BF bloom(opt::bf_size);

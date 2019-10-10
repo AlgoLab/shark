@@ -29,6 +29,7 @@ public:
     }
     if(fasta->size() > 0) return fasta;
     fc.stop();
+    delete fasta;
     return NULL;
   }
 private:
