@@ -2,17 +2,21 @@ CFLAGS	= -DNDEBUG -march=native -Wno-char-subscripts -Wall -Ofast -std=c++14 -I.
 CXXFLAGS= ${CFLAGS}
 LIBS = -L./sdsl-lite/build/lib -L./sdsl-lite/build/external/libdivsufsort/lib -lz -lsdsl -ldivsufsort -ldivsufsort64 -ltbb
 
-.PHONY: all
+.PHONY: all clean
 
 all: shark
 
-shark: main.o bloomfilter.o MurmurHash3.o bloomfilter.h
+shark: bloomfilter.o MurmurHash3.o main.o
 	@echo "* Linking shark"
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(LDFLAGS)
 
 %.o: %.cpp
 	@echo '* Compiling $<'
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
+
+main.o: argument_parser.hpp bloomfilter.h BloomfilterFiller.hpp KmerBuilder.hpp FastaSplitter.hpp ReadAnalyzer.hpp ReadOutput.hpp kmer_utils.hpp
+
+bloomfilter.o: bloomfilter.h
 
 clean:
 	rm -rf *.o
