@@ -10,6 +10,7 @@ static const char *USAGE_MESSAGE =
   "\n"
   "      -h, --help                        display this help and exit\n"
   "      -r, --reference                   reference sequences in FASTA format (can be gzipped)\n"
+  "      -x, --excluded                    reference sequences in FASTA format to exclude (can be gzipped)\n"
   "      -1, --sample1                     sample in FASTA/Q (can be gzipped)\n"
   "      -2, --sample2                     second sample in FASTA/Q (optional, can be gzipped)\n"
   "      -k, --kmer-size                   size of the kmers to index (default:31)\n"
@@ -21,6 +22,7 @@ static const char *USAGE_MESSAGE =
 
 namespace opt {
   static std::string fasta_path = "";
+  static std::string ex_fasta_path = "";
   static std::string sample1_path = "";
   static std::string sample2_path = "";
   static bool paired_flag = false;
@@ -31,10 +33,11 @@ namespace opt {
   static int nThreads = 1;
 }
 
-static const char *shortopts = "t:r:1:2:k:c:b:vh";
+static const char *shortopts = "t:r:x:1:2:k:c:b:vh";
 
 static const struct option longopts[] = {
   {"reference", required_argument, NULL, 'r'},
+  {"excluded", required_argument, NULL, 'x'},
   {"threads", required_argument, NULL, 't'},
   {"sample1", required_argument, NULL, '1'},
   {"sample2", required_argument, NULL, '2'},
@@ -52,6 +55,9 @@ void parse_arguments(int argc, char **argv) {
     switch (c) {
     case 'r':
       arg >> opt::fasta_path;
+      break;
+    case 'x':
+      arg >> opt::ex_fasta_path;
       break;
     case 't':
       arg >> opt::nThreads;

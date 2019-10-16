@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
     tbb::filter_t<vector<pair<string, string>>*, vector<uint64_t>*>
       kb(tbb::filter::parallel, KmerBuilder(opt::k));
     tbb::filter_t<vector<uint64_t>*, void>
-      bff(tbb::filter::serial_out_of_order, BloomfilterFiller(&bloom));
+      bff(tbb::filter::serial_out_of_order, BloomfilterFiller(&bloom, false));
 
     tbb::filter_t<void, void> pipeline = tr & kb & bff;
     tbb::parallel_pipeline(opt::nThreads, pipeline);
@@ -94,13 +94,32 @@ int main(int argc, char *argv[]) {
     gzclose(ref_file);
   }
 
+  // Adds excluded kmers
+  if(opt::ex_fasta_path.compare("") != 0) {
+    gzFile ex_ref_file = gzopen(opt::ex_fasta_path.c_str(), "r");
+    kseq_t *ex_seq = kseq_init(ref_file);
+
+    tbb::filter_t<void, vector<pair<string, string>>*>
+      tr(tbb::filter::serial_in_order, FastaSplitter(ex_seq, 100));
+    tbb::filter_t<vector<pair<string, string>>*, vector<uint64_t>*>
+      kb(tbb::filter::parallel, KmerBuilder(opt::k));
+    tbb::filter_t<vector<uint64_t>*, void>
+      bff(tbb::filter::serial_out_of_order, BloomfilterFiller(&bloom, true));
+
+    tbb::filter_t<void, void> pipeline = tr & kb & bff;
+    tbb::parallel_pipeline(opt::nThreads, pipeline);
+
+    kseq_destroy(ex_seq);
+    gzclose(ex_ref_file);
+  }
+
   pelapsed("Transcript file processed");
 
   bloom.switch_mode(1);
 
   pelapsed("First switch performed");
   /****************************************************************************/
-                                                                        \
+
   /*** 2. Second iteration over transcripts ***********************************/
   ref_file = gzopen(opt::fasta_path.c_str(), "r");
   seq = kseq_init(ref_file);

@@ -24,12 +24,13 @@ private:
   BF *_bf;
 
 public:
-  IDView() : _b(), _e(), _p(), _bf(nullptr) {}
+  IDView() : _b(0), _e(-1), _p(0), _bf(nullptr) {}
   IDView(const size_t &b, const size_t &e, BF *bf)
       : _b(b), _e(e), _p(b), _bf(bf) {}
   IDView &operator=(const IDView &rhs);
   ~IDView(){};
 
+  bool empty() const { return _b == 0 && _e == -1; } // FIXME: is this correct?
   bool has_next() const {return _p <= _e; }
   int_vector<16>::value_type* get_next();
   size_t size() const { return _e - _b + 1; }
@@ -51,13 +52,17 @@ public:
   }
 
 public:
-  BF(const size_t size) : _mode(0), _bf(size, 0) {
+  BF(const size_t size) : _mode(0), _bf(size, 0), _dummybv(size, 0) {
     _size = size;
   };
   ~BF() {}
 
-  void add_at(const uint64_t p) {
-    _bf[p] = 1;
+  void add_at(const uint64_t p, const bool &dummy = false) {
+    if(dummy) { // FIXME: we have to fill _bf before _dummybv. Maybe we should add some checks
+      if(_bf[p] != 1) // TODO: do we want/need this control? Maybe not, we can check if IDView is empty after a query
+	_dummybv[p] = 1;
+    } else
+      _bf[p] = 1;
   }
 
   // Function to add a k-mer to the BF
@@ -72,6 +77,12 @@ public:
   bool test_kmer(const uint64_t &kmer) const {
     uint64_t hash = _get_hash(kmer);
     return _bf[hash % _size];
+  }
+
+  // Function to test if a k-mer is from excluded genes
+  bool test_dummy_kmer(const uint64_t &kmer) const {
+    uint64_t hash = _get_hash(kmer);
+    return _dummybv[hash % _size];
   }
 
   // Function to add index to a k-mer
@@ -232,6 +243,7 @@ private:
   int _mode;
   bit_vector _bf;
   rank_support_v<1> _brank;
+  bit_vector _dummybv;
   bit_vector _bv;
   vector<vector<int>> _set_index;
   int_vector<16> _index_kmer;

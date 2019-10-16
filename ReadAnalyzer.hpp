@@ -34,6 +34,14 @@ public:
         if(kmer == (uint64_t)-1) continue;
         uint64_t rckmer = revcompl(kmer, k);
         IDView id_kmer = bf->get_index(min(kmer, rckmer));
+
+	if(id_kmer.empty() && bf->test_dummy_kmer(min(kmer, rckmer))) {
+	  auto& gene_cov = classification_id[100000]; // FIXME: hardcoded, in our tests we have less than 100 genes
+	  gene_cov.first.first += min(k, pos - gene_cov.second);
+          gene_cov.first.second = 1;
+          gene_cov.second = pos - 1;
+	}
+
         while (id_kmer.has_next()) {
           auto& gene_cov = classification_id[*(id_kmer.get_next())];
           gene_cov.first.first += min(k, pos - gene_cov.second);
@@ -56,6 +64,14 @@ public:
           }
           id_kmer = bf->get_index(min(kmer, rckmer));
           // cerr << "POS: " << pos << endl;
+
+	  if(id_kmer.empty() && bf->test_dummy_kmer(min(kmer, rckmer))) {
+	    auto& gene_cov = classification_id[100000]; // FIXME: hardcoded, in our tests we have less than 100 genes
+	    gene_cov.first.first += min(k, pos - gene_cov.second);
+	    gene_cov.first.second = 1;
+	    gene_cov.second = pos - 1;
+	  }
+
           while (id_kmer.has_next()) {
             const auto& gene_id = *(id_kmer.get_next());
             auto& gene_cov = classification_id[gene_id];
@@ -83,7 +99,12 @@ public:
 
       if(max >= c*read_seq.size()) {
         for(const auto idx : genes_idx) {
-          associations->push_back({ read_name, legend_ID[idx], read_seq, to_string(max) });
+	  string gene_idx;
+	  if(idx == 100000) // FIXME: hardcoded, in our tests we have less than 100 genes
+	    gene_idx = "DUMMY";
+	  else
+	    gene_idx = legend_ID[idx];
+          associations->push_back({ read_name, gene_idx, read_seq, to_string(max) });
         }
       }
     }
