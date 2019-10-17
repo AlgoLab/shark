@@ -28,7 +28,11 @@ public:
       classification_id.clear();
       const string& read_name = p.first;
       const string& read_seq = p.second;
-      if(read_seq.size() >= k) {
+      unsigned int len = 0;
+      for (unsigned int pos = 0; pos < read_seq.size(); ++pos) {
+        len += to_int[read_seq[pos]] > 0 ? 1 : 0;
+      }
+      if(len >= k) {
         int pos = 0;
         uint64_t kmer = build_kmer(read_seq, pos, k);
         if(kmer == (uint64_t)-1) continue;
@@ -81,7 +85,7 @@ public:
         }
       }
 
-      if(max >= c*read_seq.size()) {
+      if(max >= c*len) {
         for(const auto idx : genes_idx) {
           associations->push_back({ read_name, legend_ID[idx], read_seq, to_string(max) });
         }
