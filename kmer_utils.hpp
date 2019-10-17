@@ -47,12 +47,12 @@ int64_t build_kmer(const string &seq, int &p, const uint8_t k) {
   return kmer;
 }
 
-inline uint64_t lsappend(const uint64_t &kmer, const uint8_t c, const uint8_t k) { // left shift and append
+inline uint64_t lsappend(const uint64_t kmer, const uint64_t c, const uint64_t k) { // left shift and append
   return ((kmer << 2) | c) & ((1UL << 2*k)-1);
 }
 
-inline uint64_t rsprepend(const uint64_t &kmer, const uint8_t c, const uint8_t k) { // right shift and prepend
-  return (kmer >> 2) | ((uint64_t)c << (2*k - 2));
+inline uint64_t rsprepend(const uint64_t kmer, const uint64_t c, const uint64_t k) { // right shift and prepend
+  return (kmer >> 2) | (c << (2*k - 2));
 }
 
 #endif
