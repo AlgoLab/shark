@@ -10,14 +10,15 @@ using namespace std;
 
 class ReadAnalyzer {
 private:
-  BF *bf;
+  BF * const bf;
   const vector<string>& legend_ID;
-  uint k;
-  double c;
+  const uint k;
+  const double c;
+  const bool only_single;
 
 public:
-  ReadAnalyzer(BF *_bf, const vector<string>& _legend_ID, uint _k, double _c) :
-    bf(_bf), legend_ID(_legend_ID), k(_k), c(_c) {}
+  ReadAnalyzer(BF *_bf, const vector<string>& _legend_ID, uint _k, double _c, bool _only_single = false) :
+  bf(_bf), legend_ID(_legend_ID), k(_k), c(_c), only_single(_only_single) {}
 
   vector<array<string, 4>>* operator()(vector<pair<string, string>> *reads) const {
     vector<array<string, 4>> *associations = new vector<array<string, 4>>();
@@ -85,7 +86,7 @@ public:
         }
       }
 
-      if(max >= c*len) {
+      if(max >= c*len && (!only_single || genes_idx.size() == 1)) {
         for(const auto idx : genes_idx) {
           associations->push_back({ read_name, legend_ID[idx], read_seq, to_string(max) });
         }
@@ -94,8 +95,10 @@ public:
     delete reads;
     if(associations->size())
       return associations;
-    else
+    else {
+      delete associations;
       return NULL;
+    }
   }
 };
 

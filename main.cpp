@@ -71,7 +71,9 @@ int main(int argc, char *argv[]) {
     if(opt::paired_flag)
       cerr << "Sample 2: " << opt::sample2_path << endl;
     cerr << "K-mer length: " << opt::k << endl;
-    cerr << "Threshold value: " << opt::c << endl << endl;
+    cerr << "Threshold value: " << opt::c << endl;
+    cerr << "Only single associations: " << (opt::single ? "Yes" : "No") << endl;
+    cerr << endl;
   }
 
   /****************************************************************************/
@@ -152,7 +154,7 @@ int main(int argc, char *argv[]) {
     tbb::filter_t<void, vector<pair<string, string>>*>
       sr(tbb::filter::serial_in_order, FastaSplitter(sseq, 50000));
     tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 4>>*>
-      ra(tbb::filter::parallel, ReadAnalyzer(&bloom, legend_ID, opt::k, opt::c));
+      ra(tbb::filter::parallel, ReadAnalyzer(&bloom, legend_ID, opt::k, opt::c, opt::single));
     tbb::filter_t<vector<array<string, 4>>*, void>
       so(tbb::filter::serial_out_of_order, ReadOutput());
 
@@ -174,7 +176,7 @@ int main(int argc, char *argv[]) {
     tbb::filter_t<void, vector<pair<string, string>>*>
       sr2(tbb::filter::serial_in_order, FastaSplitter(sseq, 50000));
     tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 4>>*>
-      ra2(tbb::filter::parallel, ReadAnalyzer(&bloom, legend_ID, opt::k, opt::c));
+      ra2(tbb::filter::parallel, ReadAnalyzer(&bloom, legend_ID, opt::k, opt::c, opt::single));
     tbb::filter_t<vector<array<string, 4>>*, void>
       so2(tbb::filter::serial_out_of_order, ReadOutput());
     tbb::filter_t<void, void> pipeline_reads2 = sr2 & ra2 & so2;
