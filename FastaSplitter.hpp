@@ -13,19 +13,18 @@ using namespace std;
 
 class FastaSplitter {
 public:
-  FastaSplitter(kseq_t * _seq, const int _maxnum) : maxnum(_maxnum) {
-    seq = _seq;
-  }
+  FastaSplitter(kseq_t * const _seq, const int _maxnum)
+    : seq(_seq), maxnum(_maxnum) { }
 
   ~FastaSplitter() {
   }
 
   vector<pair<string, string>>* operator()(tbb::flow_control &fc) const {
-    vector<pair<string, string>>* fasta = new vector<pair<string, string>>();
+    vector<pair<string, string>>* const fasta = new vector<pair<string, string>>();
+    fasta->reserve(maxnum);
     int seq_len;
     while(fasta->size() < maxnum && (seq_len = kseq_read(seq)) >= 0) {
-      fasta->push_back(make_pair(std::move(string(seq->name.s)),
-				 std::move(string(seq->seq.s))));
+      fasta->emplace_back(seq->name.s, seq->seq.s);
     }
     if(fasta->size() > 0) return fasta;
     fc.stop();
@@ -33,8 +32,8 @@ public:
     return NULL;
   }
 private:
-  mutable kseq_t *seq;
-  size_t maxnum;
+  kseq_t * const seq;
+  const size_t maxnum;
 };
 
 #endif
