@@ -29,6 +29,8 @@ shark
 /--force
 /input
 /example
+/lib/
+/include/
 
 # Logs and databases #
 ######################

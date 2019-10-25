@@ -14,15 +14,15 @@ First, clone the repository and move into it.
 ```shell
 git clone --recursive https://github.com/AlgoLab/shark.git
 cd shark
-cd sdsl-lite/build
-./build.sh
-cd ../..
+cd sdsl-lite
+./install.sh ..
+cd ..
 make
 ```
 
 ## Usage
 ```
-shark [-v] -t <transcripts> -1 <sample1> [-2 <sample2>] [-k <kmer_size>] [-c <confidence>] [-b <bf-size>]
+shark [-v] -t <transcripts> -1 <sample1> [-2 <sample2>] [-k <kmer_size>] [-c <confidence>] [-b <bf-size>] [-s]
       -h, --help                        display this help and exit
       -r, --reference                   reference sequences in FASTA format (can be gzipped)
       -1, --sample1                     sample in FASTA/Q (can be gzipped)
@@ -30,6 +30,7 @@ shark [-v] -t <transcripts> -1 <sample1> [-2 <sample2>] [-k <kmer_size>] [-c <co
       -k, --kmer-size                   size of the kmers to index (default:31, max:31)
       -c, --confidence                  confidence for associating a read to a gene (default: 20)
       -b, --bf-size                     bloom filter size in GB (default:1)
+      -s, --single                      report an association only if a single gene is found
       -t, --threads                     number of threads (default:1)
       -v, --verbose                     verbose mode
 ```
