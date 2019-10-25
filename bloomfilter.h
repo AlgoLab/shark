@@ -1,59 +1,46 @@
 #ifndef _BLOOM_FILTER_HPP
 #define _BLOOM_FILTER_HPP
 
-#include "MurmurHash3.hpp"
 #include <algorithm>
 #include <array>
 #include <sdsl/bit_vectors.hpp>
 #include <sdsl/int_vector.hpp>
-#include <sdsl/select_support.hpp>
 #include <sdsl/util.hpp>
 #include <string>
+
+#include <sys/mman.h>
+
+#include "kmer_utils.hpp"
 
 using namespace std;
 using namespace sdsl;
 
-class BF;
 class KmerBuilder;
 class BloomfilterFiller;
 
-class IDView {
-private:
-  int _b, _e;
-  int _p;
-  BF *_bf;
-
-public:
-  IDView() : _b(), _e(), _p(), _bf(nullptr) {}
-  IDView(const size_t &b, const size_t &e, BF *bf)
-      : _b(b), _e(e), _p(b), _bf(bf) {}
-  IDView &operator=(const IDView &rhs);
-  ~IDView(){};
-
-  bool has_next() const {return _p <= _e; }
-  int_vector<16>::value_type* get_next();
-  size_t size() const { return _e - _b + 1; }
-  void clear();
-};
-
 class BF {
-  friend class IDView;
   friend class KmerBuilder;
   friend class BloomfilterFiller;
 
 public:
-  uint64_t _get_hash(const uint64_t &kmer) const {
-    const uint64_t *key = &kmer;
-    array<uint64_t, 2> hashes;
-    MurmurHash3_x64_128(key, sizeof(uint64_t), 0,
-                        reinterpret_cast<void *>(&hashes));
-    return hashes[0];
+
+  typedef uint64_t kmer_t;
+  typedef uint64_t hash_t;
+  typedef bit_vector bit_vector_t;
+  typedef bit_vector_t::rank_1_type rank_t;
+  typedef vector<int> index_t;
+  typedef vector<index_t> set_index_t;
+  typedef int_vector<16> index_kmer_t;
+  typedef bit_vector_t::select_1_type select_t;
+
+  BF(const size_t size) :
+    _size(size),
+    _mode(0),
+    _bf(size, 0)
+  {
+    madvise(_bf.data(), ((_bf.size()*_bf.width() + 63) >> 6) << 3, MADV_HUGEPAGE);
   }
 
-public:
-  BF(const size_t size) : _mode(0), _bf(size, 0) {
-    _size = size;
-  };
   ~BF() {}
 
   void add_at(const uint64_t p) {
@@ -61,7 +48,7 @@ public:
   }
 
   // Function to add a k-mer to the BF
-  void add_kmer(const uint64_t &kmer) {
+  void add_kmer(const kmer_t kmer) {
     if (_mode == 0) {
       uint64_t hash = _get_hash(kmer);
       _bf[hash % _size] = 1;
@@ -104,12 +91,14 @@ public:
   }
 
   // Function that returns the indexes of a given k-mer
-  IDView get_index(const uint64_t &kmer) {
+  pair<index_kmer_t::const_iterator, index_kmer_t::const_iterator> get_index(const kmer_t &kmer) const {
     int start_pos = 0;
     int end_pos = -1; // in this way, if the kmer is not in the bf, the returned IDView has no next
 
+    #ifndef NDEBUG
     if (_mode != 2)
-      return IDView(start_pos, end_pos, nullptr);
+      return make_pair(_index_kmer.end(), _index_kmer.end());
+    #endif
 
     uint64_t hash = _get_hash(kmer);
     size_t bf_idx = hash % _size;
@@ -117,18 +106,17 @@ public:
       size_t rank_searched = _brank(bf_idx + 1);
       if (rank_searched == 1) { // idxs of the first kmer
         start_pos = 0;
-        end_pos = _select_bv(rank_searched);
       } else {
         start_pos = _select_bv(rank_searched - 1) + 1;
-        end_pos = _select_bv(rank_searched);
       }
+      end_pos = _select_bv(rank_searched);
       // FIXME if a k-mer has no indexes the function returns a vector with
       // only one 0
       // FIXME how to handle this situation? is the main that has to manage
       // it?
       // See also comment in switch_mode regarding dummy index
     }
-    return IDView(start_pos, end_pos, this);
+    return make_pair(_index_kmer.begin()+start_pos, _index_kmer.begin()+end_pos);
   }
 
   /**
@@ -138,7 +126,7 @@ public:
    *  - 2: get indexes of k-mer
    * Note: it's not possible to go back to a previous mode
    **/
-  bool switch_mode(const int &new_mode) {
+  bool switch_mode(const int new_mode) {
     if(_mode == 0 and new_mode == 1) {
       /**
        * Here we initialize the vector that will contain, for each
@@ -216,7 +204,7 @@ public:
        **/
 
       // FIXME: is this the best way to release _set_index?
-      vector<vector<int>>().swap(_set_index);
+      set_index_t().swap(_set_index);
       return true;
     } else {
       return false;
@@ -224,19 +212,18 @@ public:
   }
 
 private:
-  BF() {}
-  const BF &operator=(const BF &other) { return *this; }
-  const BF &operator=(const BF &&other) { return *this; }
+  BF() = delete;
+  const BF &operator=(const BF &) = delete;
+  const BF &operator=(const BF &&) = delete;
 
   size_t _size;
   int _mode;
-  bit_vector _bf;
-  rank_support_v<1> _brank;
-  bit_vector _bv;
-  vector<vector<int>> _set_index;
-  int_vector<16> _index_kmer;
-  //dac_vector<> _index_kmer;
-  select_support_mcl<1> _select_bv;
+  bit_vector_t _bf;
+  rank_t _brank;
+  bit_vector_t _bv;
+  set_index_t _set_index;
+  index_kmer_t _index_kmer;
+  select_t _select_bv;
 };
 
 #endif

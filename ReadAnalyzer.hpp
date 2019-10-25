@@ -38,12 +38,13 @@ public:
         uint64_t kmer = build_kmer(read_seq, pos, k);
         if(kmer == (uint64_t)-1) continue;
         uint64_t rckmer = revcompl(kmer, k);
-        IDView id_kmer = bf->get_index(min(kmer, rckmer));
-        while (id_kmer.has_next()) {
-          auto& gene_cov = classification_id[*(id_kmer.get_next())];
+        auto id_kmer = bf->get_index(min(kmer, rckmer));
+        while (id_kmer.first <= id_kmer.second) {
+          auto& gene_cov = classification_id[*(id_kmer.first)];
           gene_cov.first.first += min(k, pos - gene_cov.second);
           gene_cov.first.second = 1;
           gene_cov.second = pos - 1;
+          ++id_kmer.first;
         }
 
         for (; pos < (int)read_seq.size(); ++pos) {
@@ -61,13 +62,13 @@ public:
           }
           id_kmer = bf->get_index(min(kmer, rckmer));
           // cerr << "POS: " << pos << endl;
-          while (id_kmer.has_next()) {
-            const auto& gene_id = *(id_kmer.get_next());
-            auto& gene_cov = classification_id[gene_id];
+          while (id_kmer.first <= id_kmer.second) {
+            auto& gene_cov = classification_id[*(id_kmer.first)];
             gene_cov.first.first += min(k, pos - gene_cov.second);
             gene_cov.first.second += 1;
             // cerr << "gid=" << gene_id << "\tPREV_POS=" << gene_cov.second << "\tNEW_COV=" << gene_cov.first.first << "," << gene_cov.first.second << endl;
             gene_cov.second = pos;
+            ++id_kmer.first;
           }
         }
       }

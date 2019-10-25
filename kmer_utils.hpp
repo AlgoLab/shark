@@ -1,6 +1,8 @@
 #ifndef _KMER_UTILS_HPP
 #define _KMER_UTILS_HPP
 
+#include "xxhash.hpp"
+
 using namespace std;
 
 static const uint8_t to_int[128] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0
@@ -54,5 +56,11 @@ inline uint64_t lsappend(const uint64_t kmer, const uint64_t c, const uint64_t k
 inline uint64_t rsprepend(const uint64_t kmer, const uint64_t c, const uint64_t k) { // right shift and prepend
   return (kmer >> 2) | (c << (2*k - 2));
 }
+
+inline uint64_t  _get_hash(const uint64_t& kmer) {
+  return xxh::xxhash<64>(&kmer, sizeof(uint64_t), 0);
+}
+
+
 
 #endif

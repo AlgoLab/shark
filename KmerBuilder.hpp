@@ -19,7 +19,6 @@ public:
   vector<uint64_t>* operator()(vector<pair<string, string>> *texts) const {
     if(texts) {
       vector<uint64_t>* kmer_pos = new vector<uint64_t>();
-      array<uint64_t, 2> hashes;
       uint64_t kmer, rckmer, key;
       for(const auto & p : *texts) {
         if(p.second.size() >= k) {
@@ -28,9 +27,7 @@ public:
           if(kmer == (uint64_t)-1) continue;
           rckmer = revcompl(kmer, k);
           key = min(kmer, rckmer);
-          MurmurHash3_x64_128(&key, sizeof(uint64_t), 0,
-                              reinterpret_cast<void *>(&hashes));
-          kmer_pos->push_back(hashes[0]);
+          kmer_pos->push_back(_get_hash(key));
 
           for (int pos = _pos; pos < (int)p.second.size(); ++pos) {
             uint8_t new_char = to_int[p.second[pos]];
@@ -46,9 +43,7 @@ public:
               rckmer = rsprepend(rckmer, reverse_char(new_char), k);
             }
             key = min(kmer, rckmer);
-            MurmurHash3_x64_128(&key, sizeof(uint64_t), 0,
-                                reinterpret_cast<void *>(&hashes));
-            kmer_pos->push_back(hashes[0]);
+            kmer_pos->push_back(_get_hash(key));
           }
         }
       }
