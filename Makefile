@@ -1,6 +1,6 @@
-CFLAGS	= -DNDEBUG -march=native -Wno-char-subscripts -Wall -O3 -std=c++14 -I. -I./include -fopenmp -fno-omit-frame-pointer
+CFLAGS	= -DNDEBUG -march=native -Wno-char-subscripts -Wall -O3 -std=c++14 -I. -I./include
 CXXFLAGS= ${CFLAGS}
-LIBS = -L./lib -lz -lsdsl -ldivsufsort -ldivsufsort64 -ltbb
+LIBS = -L./lib -lz -lsdsl -ltbb
 
 .PHONY: all clean
 
