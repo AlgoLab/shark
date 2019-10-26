@@ -72,6 +72,7 @@ int main(int argc, char *argv[]) {
     cerr << "K-mer length: " << opt::k << endl;
     cerr << "Threshold value: " << opt::c << endl;
     cerr << "Only single associations: " << (opt::single ? "Yes" : "No") << endl;
+    cerr << "Minimum base quality: " << static_cast<int>(opt::min_quality) << endl;
     cerr << endl;
   }
 
@@ -151,7 +152,7 @@ int main(int argc, char *argv[]) {
     gzFile f = gzopen(opt::sample1_path.c_str(), "r");
     kseq_t *sseq = kseq_init(f);
     tbb::filter_t<void, vector<pair<string, string>>*>
-      sr(tbb::filter::serial_in_order, FastaSplitter(sseq, 50000));
+      sr(tbb::filter::serial_in_order, FastaSplitter(sseq, 50000, opt::min_quality));
     tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 4>>*>
       ra(tbb::filter::parallel, ReadAnalyzer(&bloom, legend_ID, opt::k, opt::c, opt::single));
     tbb::filter_t<vector<array<string, 4>>*, void>
@@ -173,7 +174,7 @@ int main(int argc, char *argv[]) {
 
     kseq_t *sseq = kseq_init(read2_file);
     tbb::filter_t<void, vector<pair<string, string>>*>
-      sr2(tbb::filter::serial_in_order, FastaSplitter(sseq, 50000));
+      sr2(tbb::filter::serial_in_order, FastaSplitter(sseq, 50000, opt::min_quality));
     tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 4>>*>
       ra2(tbb::filter::parallel, ReadAnalyzer(&bloom, legend_ID, opt::k, opt::c, opt::single));
     tbb::filter_t<vector<array<string, 4>>*, void>
