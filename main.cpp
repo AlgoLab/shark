@@ -10,7 +10,6 @@
 #include "kseq.h"
 KSEQ_INIT(gzFile, gzread)
 #include "sdsl/int_vector.hpp"
-#include "sdsl/int_vector.hpp"
 #include "sdsl/util.hpp"
 
 #include "argument_parser.hpp"
@@ -43,16 +42,22 @@ int main(int argc, char *argv[]) {
   // Transcripts
   gzFile ref_file = gzopen(opt::fasta_path.c_str(), "r");
   kseq_t *seq = kseq_init(ref_file);
+  kseq_destroy(seq);
+  gzclose(ref_file);
 
   // Sample 1
   gzFile read1_file = gzopen(opt::sample1_path.c_str(), "r");
   seq = kseq_init(read1_file);
+  kseq_destroy(seq);
+  gzclose(read1_file);
 
   // Sample 2
   gzFile read2_file;
   if(opt::paired_flag) {
     read2_file = gzopen(opt::sample2_path.c_str(), "r");
     seq = kseq_init(read2_file);
+    kseq_destroy(seq);
+    gzclose(read2_file);
   }
 
   BF bloom(opt::bf_size);
@@ -65,7 +70,10 @@ int main(int argc, char *argv[]) {
     if(opt::paired_flag)
       cerr << "Sample 2: " << opt::sample2_path << endl;
     cerr << "K-mer length: " << opt::k << endl;
-    cerr << "Threshold value: " << opt::c << endl << endl;
+    cerr << "Threshold value: " << opt::c << endl;
+    cerr << "Only single associations: " << (opt::single ? "Yes" : "No") << endl;
+    cerr << "Minimum base quality: " << static_cast<int>(opt::min_quality) << endl;
+    cerr << endl;
   }
 
   /****************************************************************************/
@@ -144,10 +152,10 @@ int main(int argc, char *argv[]) {
     gzFile f = gzopen(opt::sample1_path.c_str(), "r");
     kseq_t *sseq = kseq_init(f);
     tbb::filter_t<void, vector<pair<string, string>>*>
-      sr(tbb::filter::serial_in_order, FastaSplitter(sseq, 50000));
-    tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 3>>*>
-      ra(tbb::filter::parallel, ReadAnalyzer(&bloom, &legend_ID, opt::k, opt::c));
-    tbb::filter_t<vector<array<string, 3>>*, void>
+      sr(tbb::filter::serial_in_order, FastaSplitter(sseq, 50000, opt::min_quality));
+    tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 4>>*>
+      ra(tbb::filter::parallel, ReadAnalyzer(&bloom, legend_ID, opt::k, opt::c, opt::single));
+    tbb::filter_t<vector<array<string, 4>>*, void>
       so(tbb::filter::serial_out_of_order, ReadOutput());
 
     tbb::filter_t<void, void> pipeline_reads = sr & ra & so;
@@ -166,10 +174,10 @@ int main(int argc, char *argv[]) {
 
     kseq_t *sseq = kseq_init(read2_file);
     tbb::filter_t<void, vector<pair<string, string>>*>
-      sr2(tbb::filter::serial_in_order, FastaSplitter(sseq, 50000));
-    tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 3>>*>
-      ra2(tbb::filter::parallel, ReadAnalyzer(&bloom, &legend_ID, opt::k, opt::c));
-    tbb::filter_t<vector<array<string, 3>>*, void>
+      sr2(tbb::filter::serial_in_order, FastaSplitter(sseq, 50000, opt::min_quality));
+    tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 4>>*>
+      ra2(tbb::filter::parallel, ReadAnalyzer(&bloom, legend_ID, opt::k, opt::c, opt::single));
+    tbb::filter_t<vector<array<string, 4>>*, void>
       so2(tbb::filter::serial_out_of_order, ReadOutput());
     tbb::filter_t<void, void> pipeline_reads2 = sr2 & ra2 & so2;
     tbb::parallel_pipeline(opt::nThreads, pipeline_reads2);

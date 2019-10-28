@@ -1,5 +1,5 @@
 # Shark
-Tool for mapping-free classification of reads, using Bloom filter.
+Fast tool for mapping-free gene separation of reads, using Bloom filter.
 
 ## Dependencies
 Shark requires the following libraries and tools:
@@ -14,22 +14,24 @@ First, clone the repository and move into it.
 ```shell
 git clone --recursive https://github.com/AlgoLab/shark.git
 cd shark
-cd sdsl-lite/build
-./build.sh
-cd ../..
+cd sdsl-lite
+./install.sh ..
+cd ..
 make
 ```
 
 ## Usage
 ```
-shark [-v] -t <transcripts> -1 <sample1> [-2 <sample2>] [-k <kmer_size>] [-c <confidence>] [-b <bf-size>]
+shark [-v] -r <references> -1 <sample1> [-2 <sample2>] [-k <kmer size>] [-c <confidence>] [-b <filter size>] [-q <min base quality>] [-s]
       -h, --help                        display this help and exit
       -r, --reference                   reference sequences in FASTA format (can be gzipped)
       -1, --sample1                     sample in FASTA/Q (can be gzipped)
       -2, --sample2                     second sample in FASTA/Q (optional, can be gzipped)
-      -k, --kmer-size                   size of the kmers to index (default:31, max:31)
-      -c, --confidence                  confidence for associating a read to a gene (default: 20)
+      -k, --kmer-size                   size of the kmers to index (default:17, max:31)
+      -c, --confidence                  confidence for associating a read to a gene (default:0.6)
       -b, --bf-size                     bloom filter size in GB (default:1)
+      -q, --min-base-quality            minimum base quality (assume FASTQ Illumina 1.8+ Phred scale, default:0, i.e., no filtering)
+      -s, --single                      report an association only if a single gene is found
       -t, --threads                     number of threads (default:1)
       -v, --verbose                     verbose mode
 ```

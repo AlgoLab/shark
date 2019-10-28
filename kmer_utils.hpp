@@ -1,6 +1,8 @@
 #ifndef _KMER_UTILS_HPP
 #define _KMER_UTILS_HPP
 
+#include "xxhash.hpp"
+
 using namespace std;
 
 static const uint8_t to_int[128] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0
@@ -21,10 +23,12 @@ inline uint8_t reverse_char(const uint8_t c) {
   return ((~c) & 3);
 }
 
-uint64_t revcompl(const uint64_t &kmer, const uint8_t k) {
+uint64_t revcompl(uint64_t kmer, const uint8_t k) {
   uint64_t rckmer = 0;
-  for(uint8_t i = 0; i<=2*k - 2; ++(++i)) {
-    rckmer = (rckmer << 2) | (~(kmer >> i) & 3);
+  kmer = ~kmer;
+  for(uint i = 0; i < k; ++i) {
+    rckmer = (rckmer << 2) | (kmer & 3);
+    kmer >>= 2;
   }
   return rckmer;
 }
@@ -45,12 +49,18 @@ int64_t build_kmer(const string &seq, int &p, const uint8_t k) {
   return kmer;
 }
 
-inline uint64_t lsappend(const uint64_t &kmer, const uint8_t c, const uint8_t k) { // left shift and append
+inline uint64_t lsappend(const uint64_t kmer, const uint64_t c, const uint64_t k) { // left shift and append
   return ((kmer << 2) | c) & ((1UL << 2*k)-1);
 }
 
-inline uint64_t rsprepend(const uint64_t &kmer, const uint8_t c, const uint8_t k) { // right shift and prepend
-  return (kmer >> 2) | ((uint64_t)c << (2*k - 2));
+inline uint64_t rsprepend(const uint64_t kmer, const uint64_t c, const uint64_t k) { // right shift and prepend
+  return (kmer >> 2) | (c << (2*k - 2));
 }
+
+inline uint64_t  _get_hash(const uint64_t& kmer) {
+  return xxh::xxhash<64>(&kmer, sizeof(uint64_t), 0);
+}
+
+
 
 #endif
