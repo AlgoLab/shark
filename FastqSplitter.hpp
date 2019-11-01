@@ -40,7 +40,7 @@ public:
       } else {
         while (fastq->size() < maxnum && (seq_len1 = kseq_read(seq1)) >= 0 && (seq_len2 = kseq_read(seq2)) >= 0) {
           fastq->push_back({
-            string(seq1->seq.s) + string(seq2->seq.s),
+            string(seq1->seq.s) + "N" + string(seq2->seq.s),
             { { seq1->name.s, full_mode ? seq1->seq.s : "", full_mode ? seq1->qual.s : "" },
               { seq2->name.s, full_mode ? seq2->seq.s : "", full_mode ? seq2->qual.s : "" } }
           });
@@ -60,8 +60,8 @@ public:
         while (fastq->size() < maxnum && (seq_len1 = kseq_read(seq1)) >= 0 && (seq_len2 = kseq_read(seq2)) >= 0) {
           fastq->push_back({
             mask_seq(
-              string(seq1->seq.s) + string(seq2->seq.s),
-              string(seq1->qual.s) + string(seq2->qual.s),
+              string(seq1->seq.s) + "N" + string(seq2->seq.s),
+              string(seq1->qual.s) + "\33" + string(seq2->qual.s),
               mq
             ),
             { { seq1->name.s, full_mode ? seq1->seq.s : "", full_mode ? seq1->qual.s : "" },
