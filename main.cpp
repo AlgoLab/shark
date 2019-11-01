@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
     tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 4>>*>
       ra(tbb::filter::parallel, ReadAnalyzer(&bloom, legend_ID, opt::k, opt::c, opt::single));
     tbb::filter_t<vector<array<string, 4>>*, void>
-      so(tbb::filter::serial_out_of_order, ReadOutput());
+      so(tbb::filter::serial_in_order, ReadOutput());
 
     tbb::filter_t<void, void> pipeline_reads = sr & ra & so;
     tbb::parallel_pipeline(opt::nThreads, pipeline_reads);
