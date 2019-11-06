@@ -1,6 +1,7 @@
 #ifndef _ARGUMENT_PARSER_HPP_
 #define _ARGUMENT_PARSER_HPP_
 
+#include <iostream>
 #include <sstream>
 #include <getopt.h>
 
@@ -25,6 +26,8 @@ namespace opt {
   static std::string fasta_path = "";
   static std::string sample1_path = "";
   static std::string sample2_path = "";
+  static std::string out1_path = "";
+  static std::string out2_path = "";
   static bool paired_flag = false;
   static uint k = 17;
   static double c = 0.6;
@@ -35,13 +38,15 @@ namespace opt {
   static int nThreads = 1;
 }
 
-static const char *shortopts = "t:r:1:2:k:c:b:q:svh";
+static const char *shortopts = "t:r:1:2:o:p:k:c:b:q:svh";
 
 static const struct option longopts[] = {
   {"reference", required_argument, NULL, 'r'},
   {"threads", required_argument, NULL, 't'},
   {"sample1", required_argument, NULL, '1'},
   {"sample2", required_argument, NULL, '2'},
+  {"out1", required_argument, NULL, 'o'},
+  {"out2", required_argument, NULL, 'p'},
   {"kmer-size", required_argument, NULL, 'k'},
   {"confidence", required_argument, NULL, 'c'},
   {"bf-size", required_argument, NULL, 'b'},
@@ -68,6 +73,12 @@ void parse_arguments(int argc, char **argv) {
     case '2':
       arg >> opt::sample2_path;
       opt::paired_flag = true;
+      break;
+    case 'o':
+      arg >> opt::out1_path;
+      break;
+    case 'p':
+      arg >> opt::out2_path;
       break;
     case 'k':
       arg >> opt::k;

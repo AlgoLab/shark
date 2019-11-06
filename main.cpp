@@ -12,11 +12,13 @@ KSEQ_INIT(gzFile, gzread)
 #include "sdsl/int_vector.hpp"
 #include "sdsl/util.hpp"
 
+#include "common.hpp"
 #include "argument_parser.hpp"
 #include "bloomfilter.h"
 #include "BloomfilterFiller.hpp"
 #include "KmerBuilder.hpp"
 #include "FastaSplitter.hpp"
+#include "FastqSplitter.hpp"
 #include "ReadAnalyzer.hpp"
 #include "ReadOutput.hpp"
 #include "kmer_utils.hpp"
@@ -52,7 +54,7 @@ int main(int argc, char *argv[]) {
   gzclose(read1_file);
 
   // Sample 2
-  gzFile read2_file;
+  gzFile read2_file = nullptr;
   if(opt::paired_flag) {
     read2_file = gzopen(opt::sample2_path.c_str(), "r");
     seq = kseq_init(read2_file);
@@ -147,46 +149,43 @@ int main(int argc, char *argv[]) {
 
   /****************************************************************************/
 
-  /*** 3. Iteration over first sample *****************************************/
+  /*** 3. Iteration over the sample *****************************************/
   {
-    gzFile f = gzopen(opt::sample1_path.c_str(), "r");
-    kseq_t *sseq = kseq_init(f);
-    tbb::filter_t<void, vector<pair<string, string>>*>
-      sr(tbb::filter::serial_in_order, FastaSplitter(sseq, 50000, opt::min_quality));
-    tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 4>>*>
+    kseq_t *sseq1 = nullptr, *sseq2 = nullptr;
+    FILE *out1 = nullptr, *out2 = nullptr;
+    read1_file = gzopen(opt::sample1_path.c_str(), "r");
+    sseq1 = kseq_init(read1_file);
+    if (opt::out1_path != "") {
+      out1 = fopen(opt::out1_path.c_str(), "w");
+    }
+    if(opt::paired_flag) {
+      read2_file = gzopen(opt::sample2_path.c_str(), "r");
+      sseq2 = kseq_init(read2_file);
+      if (opt::out2_path != "") {
+        out2 = fopen(opt::out2_path.c_str(), "w");
+      }
+    }
+
+    tbb::filter_t<void, FastqSplitter::output_t*>
+      sr(tbb::filter::serial_in_order, FastqSplitter(sseq1, sseq2, 50000, opt::min_quality, out1 != nullptr));
+    tbb::filter_t<FastqSplitter::output_t*, ReadAnalyzer::output_t*>
       ra(tbb::filter::parallel, ReadAnalyzer(&bloom, legend_ID, opt::k, opt::c, opt::single));
-    tbb::filter_t<vector<array<string, 4>>*, void>
-      so(tbb::filter::serial_out_of_order, ReadOutput());
+    tbb::filter_t<ReadAnalyzer::output_t*, void>
+      so(tbb::filter::serial_in_order, ReadOutput(out1, out2));
 
     tbb::filter_t<void, void> pipeline_reads = sr & ra & so;
     tbb::parallel_pipeline(opt::nThreads, pipeline_reads);
 
-    kseq_destroy(sseq);
-    gzclose(f);
+    kseq_destroy(sseq1);
+    gzclose(read1_file);
+    if(opt::paired_flag) {
+      kseq_destroy(sseq2);
+      gzclose(read2_file);
+    }
+    if (out1 != nullptr) fclose(out1);
+    if (out2 != nullptr) fclose(out2);
   }
-  pelapsed("First sample completed");
-
-  /****************************************************************************/
-
-  /*** 4. Iteration over second sample ****************************************/
-  if(opt::paired_flag){
-    read2_file = gzopen(opt::sample2_path.c_str(), "r");
-
-    kseq_t *sseq = kseq_init(read2_file);
-    tbb::filter_t<void, vector<pair<string, string>>*>
-      sr2(tbb::filter::serial_in_order, FastaSplitter(sseq, 50000, opt::min_quality));
-    tbb::filter_t<vector<pair<string, string>>*, vector<array<string, 4>>*>
-      ra2(tbb::filter::parallel, ReadAnalyzer(&bloom, legend_ID, opt::k, opt::c, opt::single));
-    tbb::filter_t<vector<array<string, 4>>*, void>
-      so2(tbb::filter::serial_out_of_order, ReadOutput());
-    tbb::filter_t<void, void> pipeline_reads2 = sr2 & ra2 & so2;
-    tbb::parallel_pipeline(opt::nThreads, pipeline_reads2);
-
-    kseq_destroy(sseq);
-    gzclose(read2_file);
-
-    pelapsed("Second sample completed");
-  }
+  pelapsed("Sample completed");
 
   /****************************************************************************/
 

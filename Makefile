@@ -14,7 +14,7 @@ shark: main.o
 	@echo '* Compiling $<'
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
-main.o: argument_parser.hpp bloomfilter.h BloomfilterFiller.hpp KmerBuilder.hpp FastaSplitter.hpp ReadAnalyzer.hpp ReadOutput.hpp kmer_utils.hpp
+main.o: common.hpp argument_parser.hpp bloomfilter.h BloomfilterFiller.hpp KmerBuilder.hpp FastaSplitter.hpp FastqSplitter.hpp ReadAnalyzer.hpp ReadOutput.hpp kmer_utils.hpp
 
 clean:
 	rm -rf *.o

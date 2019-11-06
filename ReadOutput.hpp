@@ -3,37 +3,34 @@
 
 #include <iostream>
 #include <vector>
-#include <array>
+#include "common.hpp"
 
 class ReadOutput {
- private:
-  static void mask_seq(string& s) {
-    for (size_t i = 0; i < s.length(); ++i) {
-      if (s[i] < 64) {
-        s[i] += 64;
-        if (65 <= s[i] && s[i] <= 90) { // upper case
-          s[i] += 32;
-        }
-      } else {
-        if (97 <= s[i] && s[i] <= 122) { // lower case
-          s[i] -= 32;
-        }
-      }
-    }
-  }
- public:
-  ReadOutput() { }
+public:
+  ReadOutput(FILE* const _out1 = nullptr, FILE* const _out2 = nullptr)
+    : out1(_out1), out2(_out2)
+  { }
 
-  void operator()(vector<array<string, 4>> *associations) const {
+  void operator()(std::vector<assoc_t> *associations) const {
     if(associations) {
-      for(auto & a : *associations) {
-        mask_seq(a[2]);
-        printf("%s %s %s %s\n", a[0].c_str(), a[1].c_str(), a[2].c_str(), a[3].c_str());
-        //cout << a[0] << " " << a[1] << " " << a[2] << '\n';
+      string previd = "";
+      for(const auto & a : *associations) {
+        const sharseq_t& s1 = a.second.first;
+        const sharseq_t& s2 = a.second.second;
+        printf("%s %s\n", s1.id.c_str(), a.first.c_str());
+        if (out1 != nullptr && previd != s1.id)
+          fprintf(out1, "@%s\n%s\n+\n%s\n", s1.id.c_str(), s1.seq.c_str(), s1.qual.c_str());
+        if (out2 != nullptr && previd != s1.id)
+          fprintf(out2, "@%s\n%s\n+\n%s\n", s2.id.c_str(), s2.seq.c_str(), s2.qual.c_str());
+        previd = std::move(s1.id);
       }
       delete associations;
     }
   }
+
+private:
+  FILE* const out1;
+  FILE* const out2;
 };
 
 #endif

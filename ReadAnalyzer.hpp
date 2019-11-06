@@ -9,26 +9,20 @@
 using namespace std;
 
 class ReadAnalyzer {
-private:
-  BF * const bf;
-  const vector<string>& legend_ID;
-  const uint k;
-  const double c;
-  const bool only_single;
-
 public:
+  typedef vector<assoc_t> output_t;
+
   ReadAnalyzer(BF *_bf, const vector<string>& _legend_ID, uint _k, double _c, bool _only_single = false) :
   bf(_bf), legend_ID(_legend_ID), k(_k), c(_c), only_single(_only_single) {}
 
-  vector<array<string, 4>>* operator()(vector<pair<string, string>> *reads) const {
-    vector<array<string, 4>> *associations = new vector<array<string, 4>>();
+  output_t* operator()(vector<elem_t> *reads) const {
+    output_t* associations = new output_t();
     vector<int> genes_idx;
     typedef pair<pair<unsigned int, unsigned int>, unsigned int> gene_cov_t;
     map<int, gene_cov_t> classification_id;
     for(const auto & p : *reads) {
       classification_id.clear();
-      const string& read_name = p.first;
-      const string& read_seq = p.second;
+      const string& read_seq = p.first;
       unsigned int len = 0;
       for (unsigned int pos = 0; pos < read_seq.size(); ++pos) {
         len += to_int[read_seq[pos]] > 0 ? 1 : 0;
@@ -89,7 +83,7 @@ public:
 
       if(max >= c*len && (!only_single || genes_idx.size() == 1)) {
         for(const auto idx : genes_idx) {
-          associations->push_back({ read_name, legend_ID[idx], read_seq, to_string(max) });
+          associations->push_back({ legend_ID[idx], std::move(get<1>(p)) });
         }
       }
     }
@@ -101,6 +95,14 @@ public:
       return NULL;
     }
   }
+
+private:
+  BF * const bf;
+  const vector<string>& legend_ID;
+  const uint k;
+  const double c;
+  const bool only_single;
+
 };
 
 #endif
