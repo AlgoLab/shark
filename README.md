@@ -27,6 +27,8 @@ shark [-v] -r <references> -1 <sample1> [-2 <sample2>] [-k <kmer size>] [-c <con
       -r, --reference                   reference sequences in FASTA format (can be gzipped)
       -1, --sample1                     sample in FASTA/Q (can be gzipped)
       -2, --sample2                     second sample in FASTA/Q (optional, can be gzipped)
+      -o, --out1                        first output sample in FASTA/Q (default: sharked_sample.1)
+      -p, --out2                        second output sample in FASTA/Q (default: sharked_sample.2)
       -k, --kmer-size                   size of the kmers to index (default:17, max:31)
       -c, --confidence                  confidence for associating a read to a gene (default:0.6)
       -b, --bf-size                     bloom filter size in GB (default:1)
@@ -40,5 +42,5 @@ shark [-v] -r <references> -1 <sample1> [-2 <sample2>] [-k <kmer size>] [-c <con
 ```
 cd examples
 tar xvfz chrY.tar.gz
-../shark -r chrY/chrY.cdna.fa -1 chrY/chrY_1.fq -2 chrY/chrY_2.fq > chrY.ssv
+../shark -r chrY/chrY.cdna.fa -1 chrY/chrY_1.fq -2 chrY/chrY_2.fq -o chrY_1.sharked.fq -p chrY_2.sharked.fq > chrY.ssv
 ```

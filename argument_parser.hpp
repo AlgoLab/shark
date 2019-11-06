@@ -13,6 +13,8 @@ static const char *USAGE_MESSAGE =
   "      -r, --reference                   reference sequences in FASTA format (can be gzipped)\n"
   "      -1, --sample1                     sample in FASTA/Q (can be gzipped)\n"
   "      -2, --sample2                     second sample in FASTA/Q (optional, can be gzipped)\n"
+  "      -o, --out1                        first output sample in FASTA/Q (default: sharked_sample.1)\n"
+  "      -p, --out2                        second output sample in FASTA/Q (default: sharked_sample.2)\n"
   "      -k, --kmer-size                   size of the kmers to index (default:17)\n"
   "      -c, --confidence                  confidence for associating a read to a gene (default:0.6)\n"
   "      -b, --bf-size                     bloom filter size in GB (default:1)\n"
@@ -26,8 +28,8 @@ namespace opt {
   static std::string fasta_path = "";
   static std::string sample1_path = "";
   static std::string sample2_path = "";
-  static std::string out1_path = "";
-  static std::string out2_path = "";
+  static std::string out1_path = "sharked_sample.1";
+  static std::string out2_path = "sharked_sample.2";
   static bool paired_flag = false;
   static uint k = 17;
   static double c = 0.6;
