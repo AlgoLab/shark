@@ -38,6 +38,13 @@ shark [-v] -r <references> -1 <sample1> [-2 <sample2>] [-k <kmer size>] [-c <con
       -v, --verbose                     verbose mode
 ```
 
+## Output format
+
+`shark` outputs to `stdout` a ssv file reporting associations between reads and genes.
+The first element of each line is the name of the read whereas the second element is the gene identifier.
+
+Reads in the samples that pass the filter step are stored in the files passed as argument to `-o` and `-p`.
+
 ## Example
 
 A small example is provided in the example directory.
