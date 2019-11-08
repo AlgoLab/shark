@@ -25,10 +25,10 @@ make
 shark [-v] -r <references> -1 <sample1> [-2 <sample2>] [-k <kmer size>] [-c <confidence>] [-b <filter size>] [-q <min base quality>] [-s]
       -h, --help                        display this help and exit
       -r, --reference                   reference sequences in FASTA format (can be gzipped)
-      -1, --sample1                     sample in FASTA/Q (can be gzipped)
-      -2, --sample2                     second sample in FASTA/Q (optional, can be gzipped)
-      -o, --out1                        first output sample in FASTA/Q (default: sharked_sample.1)
-      -p, --out2                        second output sample in FASTA/Q (default: sharked_sample.2)
+      -1, --sample1                     sample in FASTQ (can be gzipped)
+      -2, --sample2                     second sample in FASTQ (optional, can be gzipped)
+      -o, --out1                        first output sample in FASTQ (default: sharked_sample.1)
+      -p, --out2                        second output sample in FASTQ (default: sharked_sample.2)
       -k, --kmer-size                   size of the kmers to index (default:17, max:31)
       -c, --confidence                  confidence for associating a read to a gene (default:0.6)
       -b, --bf-size                     bloom filter size in GB (default:1)
@@ -47,7 +47,10 @@ A small example is provided in the example directory.
 To filter out the reads sequenced from gene ENSG00000277117, run `shark` as follows:
 
 ```
-./shark -r example/ENSG00000277117.fa -1 example/sample_1.fq -2 example/sample_2.fq -o example/sharked.sample_1.fq -p example/sharked.sample_2.fq > example/ENSG00000277117.ssv
+./shark -r example/ENSG00000277117.fa -1 example/sample_1.fq \
+                                      -2 example/sample_2.fq \
+                                      -o example/sharked.sample_1.fq \
+                                      -p example/sharked.sample_2.fq > example/ENSG00000277117.ssv
 ```
 
 The results should be equal to: `example/ENSG00000277117.truth.ssv`, `example/sharked.sample_1.truth.fq`, and  `example/sharked.sample_2.truth.fq`.
