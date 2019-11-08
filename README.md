@@ -39,8 +39,15 @@ shark [-v] -r <references> -1 <sample1> [-2 <sample2>] [-k <kmer size>] [-c <con
 ```
 
 ## Example
+
+A small example is provided in the example directory.
+* `ENSG00000277117.fa` is the gene sequence of gene ENSG00000277117 in FASTA format
+* `sample_1.fq` and `sample_2.fq` are a paired-end RNA-Seq sample simulated from genes ENSG00000277117 and ENSG00000275464
+
+To filter out the reads sequenced from gene ENSG00000277117, run `shark` as follows:
+
 ```
-cd examples
-tar xvfz chrY.tar.gz
-../shark -r chrY/chrY.cdna.fa -1 chrY/chrY_1.fq -2 chrY/chrY_2.fq -o chrY_1.sharked.fq -p chrY_2.sharked.fq > chrY.ssv
+./shark -r example/ENSG00000277117.fa -1 example/sample_1.fq -2 example/sample_2.fq -o example/sharked.sample_1.fq -p example/sharked.sample_2.fq > example/ENSG00000277117.ssv
 ```
+
+The results should be equal to: `example/ENSG00000277117.truth.ssv`, `example/sharked.sample_1.truth.fq`, and  `example/sharked.sample_2.truth.fq`.
