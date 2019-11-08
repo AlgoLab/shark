@@ -22,10 +22,14 @@ make
 
 ## Usage
 ```
-shark [-v] -r <references> -1 <sample1> [-2 <sample2>] [-k <kmer size>] [-c <confidence>] [-b <filter size>] [-q <min base quality>] [-s]
-      -h, --help                        display this help and exit
+Usage: shark -r <references> -1 <sample1> [OPTIONAL ARGUMENTS]
+
+Arguments:
       -r, --reference                   reference sequences in FASTA format (can be gzipped)
       -1, --sample1                     sample in FASTQ (can be gzipped)
+
+Optional arguments:
+      -h, --help                        display this help and exit
       -2, --sample2                     second sample in FASTQ (optional, can be gzipped)
       -o, --out1                        first output sample in FASTQ (default: sharked_sample.1)
       -p, --out2                        second output sample in FASTQ (default: sharked_sample.2)

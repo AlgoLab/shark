@@ -6,23 +6,24 @@
 #include <getopt.h>
 
 static const char *USAGE_MESSAGE =
-  "Usage: shark [-v] -r <references> -1 <sample1> [-2 <sample2>] [-k <kmer size>] [-c <confidence>] [-b <filter size>] [-q <min base quality>] [-s]\n"
-  "Top notch description of this tool\n"
-  "\n"
-  "      -h, --help                        display this help and exit\n"
-  "      -r, --reference                   reference sequences in FASTA format (can be gzipped)\n"
-  "      -1, --sample1                     sample in FASTQ (can be gzipped)\n"
-  "      -2, --sample2                     second sample in FASTQ (optional, can be gzipped)\n"
-  "      -o, --out1                        first output sample in FASTQ (default: sharked_sample.1)\n"
-  "      -p, --out2                        second output sample in FASTQ (default: sharked_sample.2)\n"
-  "      -k, --kmer-size                   size of the kmers to index (default:17)\n"
-  "      -c, --confidence                  confidence for associating a read to a gene (default:0.6)\n"
-  "      -b, --bf-size                     bloom filter size in GB (default:1)\n"
-  "      -q, --min-base-quality            minimum base quality (assume FASTQ Illumina 1.8+ Phred scale, default:0, i.e., no filtering)\n"
-  "      -s, --single                      report an association only if a single gene is found\n"
-  "      -t, --threads                     number of threads (default:1)\n"
-  "      -v, --verbose                     verbose mode\n"
-  "\n";
+"Usage: shark -r <references> -1 <sample1> [OPTIONAL ARGUMENTS]\n"
+"\n"
+"Arguments:\n"
+"      -r, --reference                   reference sequences in FASTA format (can be gzipped)\n"
+"      -1, --sample1                     sample in FASTQ (can be gzipped)\n"
+"\n"
+"Optional arguments:\n"
+"      -h, --help                        display this help and exit\n"
+"      -2, --sample2                     second sample in FASTQ (optional, can be gzipped)\n"
+"      -o, --out1                        first output sample in FASTQ (default: sharked_sample.1)\n"
+"      -p, --out2                        second output sample in FASTQ (default: sharked_sample.2)\n"
+"      -k, --kmer-size                   size of the kmers to index (default:17, max:31)\n"
+"      -c, --confidence                  confidence for associating a read to a gene (default:0.6)\n"
+"      -b, --bf-size                     bloom filter size in GB (default:1)\n"
+"      -q, --min-base-quality            minimum base quality (assume FASTQ Illumina 1.8+ Phred scale, default:0, i.e., no filtering)\n"
+"      -s, --single                      report an association only if a single gene is found\n"
+"      -t, --threads                     number of threads (default:1)\n"
+"      -v, --verbose                     verbose mode\n";
 
 namespace opt {
   static std::string fasta_path = "";
