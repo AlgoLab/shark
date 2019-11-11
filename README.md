@@ -1,3 +1,5 @@
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/shark/badges/installer/conda.svg)](https://conda.anaconda.org/bioconda)
+
 # Shark
 Fast tool for mapping-free gene separation of reads, using Bloom filter.
 
