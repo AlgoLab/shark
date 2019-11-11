@@ -63,11 +63,13 @@ public:
     _mode(0),
     _bf(size, 0)
   {
+#ifdef MADV_HUGEPAGE
     char* const sptr = reinterpret_cast<char*>(_bf.data());
     const size_t soffset = SHARK_HUGEPAGESIZE - (reinterpret_cast<size_t>(sptr) % SHARK_HUGEPAGESIZE);
     char* const eptr = sptr + (((size + 63) >> 6) << 3);
     const size_t eoffset = (reinterpret_cast<size_t>(eptr) % SHARK_HUGEPAGESIZE);
     madvise(sptr + soffset, (eptr - sptr) - eoffset - soffset, MADV_HUGEPAGE);
+#endif
   }
 
   ~BF() {}
