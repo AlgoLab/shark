@@ -4,6 +4,7 @@ Fast tool for mapping-free gene separation of reads, using Bloom filter.
 ## Dependencies
 Shark requires the following libraries and tools:
 - [sdsl-lite v2.1.1](https://github.com/simongog/sdsl-lite/tree/v2.1.1)
+- Intel TBB (tested with version 2017 update 7)
 
 This repository comes with it as submodule.
 
