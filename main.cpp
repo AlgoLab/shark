@@ -24,14 +24,11 @@
 #include <algorithm>
 #include <string>
 #include <vector>
-#include <unordered_set>
 
 #include <zlib.h>
 
 #include "kseq.h"
 KSEQ_INIT(gzFile, gzread)
-#include "sdsl/int_vector.hpp"
-#include "sdsl/util.hpp"
 
 #include "common.hpp"
 #include "argument_parser.hpp"
@@ -132,7 +129,9 @@ int main(int argc, char *argv[]) {
   int nidx = 0;
   // open and read the .fa, every time a kmer is found the relative index is
   // added to BF
+  vector<uint64_t> kmers;
   while ((seq_len = kseq_read(seq)) >= 0) {
+    kmers.clear();
     string input_name = seq->name.s;
     legend_ID.push_back(input_name);
 
@@ -141,7 +140,7 @@ int main(int argc, char *argv[]) {
       uint64_t kmer = build_kmer(seq->seq.s, _p, opt::k);
       if(kmer == (uint64_t)-1) continue;
       uint64_t rckmer = revcompl(kmer, opt::k);
-      bloom.add_to_kmer(min(kmer, rckmer), nidx);
+      kmers.push_back(min(kmer, rckmer));
       for (int p = _p; p < seq_len; ++p) {
         uint8_t new_char = to_int[seq->seq.s[p]];
         if(new_char == 0) { // Found a char different from A, C, G, T
@@ -155,8 +154,9 @@ int main(int argc, char *argv[]) {
           kmer = lsappend(kmer, new_char, opt::k);
           rckmer = rsprepend(rckmer, reverse_char(new_char), opt::k);
         }
-        bloom.add_to_kmer(min(kmer, rckmer), nidx);
+        kmers.push_back(min(kmer, rckmer));
       }
+      bloom.add_to_kmer(kmers, nidx);
     }
     ++nidx;
   }

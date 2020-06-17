@@ -23,13 +23,9 @@
 #define _BLOOM_FILTER_HPP
 
 #include <algorithm>
-#include <array>
 #include <sdsl/bit_vectors.hpp>
-#include <sdsl/int_vector.hpp>
 #include <sdsl/util.hpp>
 #include <string>
-
-#include <sys/mman.h>
 
 #include "kmer_utils.hpp"
 
@@ -38,10 +34,6 @@ using namespace sdsl;
 
 class KmerBuilder;
 class BloomfilterFiller;
-
-#ifndef SHARK_HUGEPAGESIZE
-#define SHARK_HUGEPAGESIZE (2 * 1024 * 1024)
-#endif
 
 class BF {
   friend class KmerBuilder;
@@ -55,7 +47,7 @@ public:
   typedef bit_vector_t::rank_1_type rank_t;
   typedef vector<int> index_t;
   typedef vector<index_t> set_index_t;
-  typedef int_vector<16> index_kmer_t;
+  typedef vector<uint16_t> index_kmer_t;
   typedef bit_vector_t::select_1_type select_t;
 
   BF(const size_t size) :
@@ -63,13 +55,6 @@ public:
     _mode(0),
     _bf(size, 0)
   {
-#ifdef MADV_HUGEPAGE
-    char* const sptr = reinterpret_cast<char*>(_bf.data());
-    const size_t soffset = SHARK_HUGEPAGESIZE - (reinterpret_cast<size_t>(sptr) % SHARK_HUGEPAGESIZE);
-    char* const eptr = sptr + (((size + 63) >> 6) << 3);
-    const size_t eoffset = (reinterpret_cast<size_t>(eptr) % SHARK_HUGEPAGESIZE);
-    madvise(sptr + soffset, (eptr - sptr) - eoffset - soffset, MADV_HUGEPAGE);
-#endif
   }
 
   ~BF() {}
@@ -92,33 +77,20 @@ public:
     return _bf[hash % _size];
   }
 
-  // Function to add index to a k-mer
-  bool add_to_kmer(const uint64_t &kmer, const int &input_idx) {
+  void add_to_kmer(vector<uint64_t> &kmers, const int input_idx) {
     if (_mode != 1)
-      return false;
+      return;
 
-    uint64_t hash = _get_hash(kmer);
-    size_t bf_idx = hash % _size;
-    if (_bf[bf_idx]) {
-      int kmer_rank = _brank(bf_idx);
-      _set_index[kmer_rank].push_back(input_idx);
-      return true;
+    for (auto& kmer: kmers) {
+      kmer = _get_hash(kmer) % _size;
     }
-    return false;
-  }
-
-  // Function to add multiple indexes to a k-mer
-  bool multiple_add_to_kmer(const uint64_t &kmer, const vector<int> &idxs) {
-    // FIXME: can't we just use a single insert (range insertion)? Revert if it's wrong
-    if (_mode != 1)
-      return false;
-    uint64_t hash = _get_hash(kmer);
-    size_t bf_idx = hash % _size;
-    if (_bf[bf_idx]) {
+    sort(kmers.begin(), kmers.end());
+    for (const auto bf_idx: kmers) {
       int kmer_rank = _brank(bf_idx);
-      _set_index[kmer_rank].insert(idxs.begin(), idxs.begin(), idxs.end());
+      const auto size = _set_index[kmer_rank].size();
+      if (size == 0 || _set_index[kmer_rank][size-1] != input_idx)
+        _set_index[kmer_rank].push_back(input_idx);
     }
-    return true;
   }
 
   // Function that returns the indexes of a given k-mer
@@ -135,9 +107,7 @@ public:
     size_t bf_idx = hash % _size;
     if (_bf[bf_idx]) {
       size_t rank_searched = _brank(bf_idx + 1);
-      if (rank_searched == 1) { // idxs of the first kmer
-        start_pos = 0;
-      } else {
+      if (rank_searched > 1) { // idxs of the first kmer
         start_pos = _select_bv(rank_searched - 1) + 1;
       }
       end_pos = _select_bv(rank_searched);
@@ -147,7 +117,7 @@ public:
       // it?
       // See also comment in switch_mode regarding dummy index
     }
-    return make_pair(_index_kmer.begin()+start_pos, _index_kmer.begin()+end_pos);
+    return make_pair(_index_kmer.cbegin()+start_pos, _index_kmer.cbegin()+end_pos);
   }
 
   /**
@@ -170,16 +140,14 @@ public:
       util::init_support(_brank,&_bf);
       size_t num_kmer = _brank(_bf.size());
       if (num_kmer != 0)
-        _set_index.resize(num_kmer, vector<int>());
+        _set_index.resize(num_kmer, index_t());
       return true;
     } else if(_mode == 1 and new_mode == 2) {
       _mode = new_mode;
 
       // We compute how many idxs we have to store
       int tot_idx = 0;
-      for (auto &set : _set_index) {
-        sort(set.begin(), set.end());
-        set.erase(unique(set.begin(), set.end()), set.end());
+      for (const auto &set : _set_index) {
         tot_idx += set.size();
       }
 
@@ -192,7 +160,7 @@ public:
        **/
       _bv = bit_vector(tot_idx, 0);
       int pos = -1;
-      for (auto &set : _set_index) {
+      for (const auto &set : _set_index) {
         pos += set.size();
         _bv[pos] = 1;
       }
@@ -204,8 +172,8 @@ public:
        * associated to each kmer.
        **/
       //int_vector<16> tmp_index_kmer(tot_idx); // uncompressed and temporary
-      _index_kmer = int_vector<16>(tot_idx);
-      int idx_position = 0;
+      _index_kmer.resize(tot_idx);
+      index_kmer_t::iterator ins = _index_kmer.begin();
       for (const auto &set : _set_index) {
         // FIXME: should we check if the set is empty? Maybe saving a
         // dummy index (0)? If so, we cannot use 0 as an index for
@@ -213,11 +181,7 @@ public:
         // must manage this (it decides the idx). Anyway, I (LD) think
         // this can never happen in our context.
         // if ( set.size() != 0) {
-        for (const int &set_element : set) {
-          //tmp_index_kmer[idx_position] = set_element;
-          _index_kmer[idx_position] = set_element;
-          ++idx_position;
-        }
+        ins = std::copy(set.begin(), set.end(), ins);
         // } else { tmp_index_kmer[idx_position] = 0; idx_position++; }
       }
 
@@ -247,7 +211,7 @@ private:
   const BF &operator=(const BF &) = delete;
   const BF &operator=(const BF &&) = delete;
 
-  size_t _size;
+  const size_t _size;
   int _mode;
   bit_vector_t _bf;
   rank_t _brank;
