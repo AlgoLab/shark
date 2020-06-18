@@ -22,12 +22,10 @@
 #ifndef KMER_BUILDER_HPP
 #define KMER_BUILDER_HPP
 
-#include "kseq.h"
-#include <zlib.h>
 #include <string>
 #include <vector>
 #include <memory>
-#include "bloomfilter.h"
+#include <algorithm>
 #include "kmer_utils.hpp"
 
 using namespace std;
@@ -35,47 +33,52 @@ using namespace std;
 class KmerBuilder {
 
 public:
-  KmerBuilder(size_t _k) : k(_k) {}
+  KmerBuilder(size_t _k, size_t _size) : k(_k), size(_size) {}
 
-  vector<uint64_t>* operator()(vector<pair<string, string>> *texts) const {
-    if(texts) {
-      vector<uint64_t>* kmer_pos = new vector<uint64_t>();
-      uint64_t kmer, rckmer, key;
-      for(const auto & p : *texts) {
-        if(p.second.size() >= k) {
-          int _pos = 0;
-          kmer = build_kmer(p.second, _pos, k);
-          if(kmer == (uint64_t)-1) continue;
-          rckmer = revcompl(kmer, k);
-          key = min(kmer, rckmer);
-          kmer_pos->push_back(_get_hash(key));
+  vector<vector<uint64_t>>* operator()(vector<string> *texts) const {
+    if (texts == nullptr) return nullptr;
+    vector<vector<uint64_t>>* kmer_possp = new vector<vector<uint64_t>>();
+    vector<vector<uint64_t>>& kmer_poss = *kmer_possp;
+    kmer_poss.reserve(texts->size());
+    uint64_t kmer, rckmer, key;
+    for(const auto & p : *texts) {
+      kmer_poss.emplace_back();
+      vector<uint64_t>& kmer_pos= kmer_poss.back();
+      if(p.size() >= k) {
+        kmer_pos.reserve(p.size()-k+1);
+        int _pos = 0;
+        kmer = build_kmer(p, _pos, k);
+        if(kmer == (uint64_t)-1) continue;
+        rckmer = revcompl(kmer, k);
+        key = min(kmer, rckmer);
+        kmer_pos.push_back(_get_hash(key) % size);
 
-          for (int pos = _pos; pos < (int)p.second.size(); ++pos) {
-            uint8_t new_char = to_int[p.second[pos]];
-            if(new_char == 0) { // Found a char different from A, C, G, T
-              ++pos; // we skip this character then we build a new kmer
-              kmer = build_kmer(p.second, pos, k);
-              if(kmer == (uint64_t)-1) break;
-              rckmer = revcompl(kmer, k);
-              --pos; // p must point to the ending position of the kmer, it will be incremented by the for
-            } else {
-              --new_char; // A is 1 but it should be 0
-              kmer = lsappend(kmer, new_char, k);
-              rckmer = rsprepend(rckmer, reverse_char(new_char), k);
-            }
-            key = min(kmer, rckmer);
-            kmer_pos->push_back(_get_hash(key));
+        for (int pos = _pos; pos < (int)p.size(); ++pos) {
+          uint8_t new_char = to_int[p[pos]];
+          if(new_char == 0) { // Found a char different from A, C, G, T
+            ++pos; // we skip this character then we build a new kmer
+            kmer = build_kmer(p, pos, k);
+            if(kmer == (uint64_t)-1) break;
+            rckmer = revcompl(kmer, k);
+            --pos; // p must point to the ending position of the kmer, it will be incremented by the for
+          } else {
+            --new_char; // A is 1 but it should be 0
+            kmer = lsappend(kmer, new_char, k);
+            rckmer = rsprepend(rckmer, reverse_char(new_char), k);
           }
+          key = min(kmer, rckmer);
+          kmer_pos.push_back(_get_hash(key) % size);
         }
+        std::sort(kmer_pos.begin(), kmer_pos.end());
       }
-      delete texts;
-      return kmer_pos;
     }
-    return NULL;
+    delete texts;
+    return kmer_possp;
   }
 
 private:
-  size_t k;
+  const size_t k;
+  const size_t size;
 };
 
 #endif

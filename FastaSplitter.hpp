@@ -41,17 +41,17 @@ public:
   ~FastaSplitter() {
   }
 
-  vector<pair<string, string>>* operator()(tbb::flow_control &fc) const {
-    vector<pair<string, string>>* const fasta = new vector<pair<string, string>>();
+  vector<string>* operator()(tbb::flow_control &fc) const {
+    vector<string>* const fasta = new vector<string>();
     fasta->reserve(maxnum);
     int seq_len;
     while(fasta->size() < maxnum && (seq_len = kseq_read(seq)) >= 0) {
-      fasta->emplace_back(seq->name.s, seq->seq.s);
+      fasta->emplace_back(seq->seq.s);
     }
     if(fasta->size() > 0) return fasta;
     fc.stop();
     delete fasta;
-    return NULL;
+    return nullptr;
   }
 
 private:

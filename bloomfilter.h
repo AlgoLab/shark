@@ -46,7 +46,7 @@ public:
   typedef bit_vector bit_vector_t;
   typedef bit_vector_t::rank_1_type rank_t;
   typedef vector<int> index_t;
-  typedef vector<index_t> set_index_t;
+  typedef vector<uint16_t> set_index_t;
   typedef vector<uint16_t> index_kmer_t;
   typedef bit_vector_t::select_1_type select_t;
 
@@ -77,19 +77,38 @@ public:
     return _bf[hash % _size];
   }
 
-  void add_to_kmer(vector<uint64_t> &kmers, const int input_idx) {
+  void add_to_kmer_1(vector<uint64_t> &kmers) {
     if (_mode != 1)
       return;
 
     for (auto& kmer: kmers) {
       kmer = _get_hash(kmer) % _size;
     }
-    sort(kmers.begin(), kmers.end());
+    std::sort(kmers.begin(), kmers.end());
+    uint64_t prev = _size;
     for (const auto bf_idx: kmers) {
+      if (bf_idx == prev) continue;
+      prev = bf_idx;
+      const int kmer_rank = _brank(bf_idx);
+      ++_set_index[kmer_rank];
+    }
+  }
+
+  void add_to_kmer_2(vector<uint64_t> &kmers, const uint16_t input_idx) {
+    if (_mode != 2)
+      return;
+
+    for (auto& kmer: kmers) {
+      kmer = _get_hash(kmer) % _size;
+    }
+    std::sort(kmers.begin(), kmers.end());
+    uint64_t prev = _size;
+    for (const auto bf_idx: kmers) {
+      if (bf_idx == prev) continue;
+      prev = bf_idx;
       int kmer_rank = _brank(bf_idx);
-      const auto size = _set_index[kmer_rank].size();
-      if (size == 0 || _set_index[kmer_rank][size-1] != input_idx)
-        _set_index[kmer_rank].push_back(input_idx);
+      int start_pos = (kmer_rank >= 1) ? _select_bv(kmer_rank) + 1 : 0;
+      _index_kmer[start_pos + --_set_index[kmer_rank]] = input_idx;
     }
   }
 
@@ -99,7 +118,7 @@ public:
     int end_pos = -1; // in this way, if the kmer is not in the bf, the returned IDView has no next
 
     #ifndef NDEBUG
-    if (_mode != 2)
+    if (_mode != 3)
       return make_pair(_index_kmer.end(), _index_kmer.end());
     #endif
 
@@ -111,11 +130,6 @@ public:
         start_pos = _select_bv(rank_searched - 1) + 1;
       }
       end_pos = _select_bv(rank_searched);
-      // FIXME if a k-mer has no indexes the function returns a vector with
-      // only one 0
-      // FIXME how to handle this situation? is the main that has to manage
-      // it?
-      // See also comment in switch_mode regarding dummy index
     }
     return make_pair(_index_kmer.cbegin()+start_pos, _index_kmer.cbegin()+end_pos);
   }
@@ -137,18 +151,18 @@ public:
        * function.
        **/
       _mode = new_mode;
-      util::init_support(_brank,&_bf);
+      util::init_support(_brank, &_bf);
       size_t num_kmer = _brank(_bf.size());
-      if (num_kmer != 0)
-        _set_index.resize(num_kmer, index_t());
+      _set_index.resize(num_kmer, 0);
+
       return true;
     } else if(_mode == 1 and new_mode == 2) {
       _mode = new_mode;
 
       // We compute how many idxs we have to store
       int tot_idx = 0;
-      for (const auto &set : _set_index) {
-        tot_idx += set.size();
+      for (const int set : _set_index) {
+        tot_idx += set;
       }
 
       /**
@@ -160,45 +174,22 @@ public:
        **/
       _bv = bit_vector(tot_idx, 0);
       int pos = -1;
-      for (const auto &set : _set_index) {
-        pos += set.size();
+      for (const int set: _set_index) {
+        pos += set;
         _bv[pos] = 1;
       }
-      util::init_support(_select_bv,&_bv);
+      util::init_support(_select_bv, &_bv);
 
       /**
        * We merge the idxs associated to each kmer into a single
        * int_vector. This vector is the concatenation of the sets
        * associated to each kmer.
        **/
-      //int_vector<16> tmp_index_kmer(tot_idx); // uncompressed and temporary
       _index_kmer.resize(tot_idx);
-      index_kmer_t::iterator ins = _index_kmer.begin();
-      for (const auto &set : _set_index) {
-        // FIXME: should we check if the set is empty? Maybe saving a
-        // dummy index (0)? If so, we cannot use 0 as an index for
-        // kmers. Maybe -1 is better. Moreover, in this way, the main
-        // must manage this (it decides the idx). Anyway, I (LD) think
-        // this can never happen in our context.
-        // if ( set.size() != 0) {
-        ins = std::copy(set.begin(), set.end(), ins);
-        // } else { tmp_index_kmer[idx_position] = 0; idx_position++; }
-      }
 
-      // _index_kmer = dac_vector<>(tmp_index_kmer);;
-      /**
-         On a small input (80 genes), dac compression seems the best one:
-           Vec, Size, MB
-           Orig, 7645238, 29.1643
-           VLC, 7645238, 8.76068 //vlc_vector
-           DAC, 7645238, 7.54858 // dav_vector
-           ENC_eliasdelta, 7645238, 24.4415 // enc_vector<coder::elias_delta>
-           ENC_eliasgamma, 7645238, 35.0523 // enc_vector<coder::elias_gamma>
-           ENC_fib, 7645238, 26.5783 // enc_vector<coder::fibonacci>
-           BitCompress, 1672395, 6.37969 // util::bit_compress()
-       **/
-
-      // FIXME: is this the best way to release _set_index?
+      return true;
+    } else if(_mode == 2 and new_mode == 3) {
+      _mode = new_mode;
       set_index_t().swap(_set_index);
       return true;
     } else {
