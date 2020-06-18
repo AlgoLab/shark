@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
 
   BF bloom(opt::bf_size);
   vector<string> legend_ID;
-  int seq_len;
+  legend_ID.reserve(100);
 
   if(opt::verbose) {
     cerr << "Reference texts: " << opt::fasta_path << endl;
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
     ref_file = gzopen(opt::fasta_path.c_str(), "r");
     kseq_t *refseq = kseq_init(ref_file);
     tbb::filter_t<void, vector<string>*>
-      tr(tbb::filter::serial_in_order, FastaSplitter(refseq, 100));
+      tr(tbb::filter::serial_in_order, FastaSplitter(refseq, 100, &legend_ID));
     tbb::filter_t<vector<string>*, vector<vector<uint64_t>>*>
       kb(tbb::filter::parallel, KmerBuilder(opt::k, opt::bf_size));
     tbb::filter_t<vector<vector<uint64_t>>*, void>
@@ -122,88 +122,66 @@ int main(int argc, char *argv[]) {
 
   pelapsed("First switch performed");
   /****************************************************************************/
-                                                                        \
-  /*** 2a. Second iteration over transcripts ***********************************/
-  ref_file = gzopen(opt::fasta_path.c_str(), "r");
-  seq = kseq_init(ref_file);
-  // open and read the .fa, every time a kmer is found the relative index is
-  // added to BF
-  vector<uint64_t> kmers;
-  while ((seq_len = kseq_read(seq)) >= 0) {
-    kmers.clear();
-    string input_name = seq->name.s;
-    legend_ID.push_back(input_name);
+  /*** 2a. Second iteration over transcripts **********************************/
+  {
+    ref_file = gzopen(opt::fasta_path.c_str(), "r");
+    kseq_t *refseq = kseq_init(ref_file);
+    tbb::filter_t<void, vector<string>*>
+      tr(tbb::filter::serial_in_order, FastaSplitter(refseq, 100));
+    tbb::filter_t<vector<string>*, vector<vector<uint64_t>>*>
+      kb(tbb::filter::parallel, KmerBuilder(opt::k, opt::bf_size));
 
-    if ((uint)seq_len >= opt::k) {
-      int _p = 0;
-      uint64_t kmer = build_kmer(seq->seq.s, _p, opt::k);
-      if(kmer == (uint64_t)-1) continue;
-      uint64_t rckmer = revcompl(kmer, opt::k);
-      kmers.push_back(min(kmer, rckmer));
-      for (int p = _p; p < seq_len; ++p) {
-        uint8_t new_char = to_int[seq->seq.s[p]];
-        if(new_char == 0) { // Found a char different from A, C, G, T
-          ++p; // we skip this character then we build a new kmer
-          kmer = build_kmer(seq->seq.s, p, opt::k);
-          if(kmer == (uint64_t)-1) break;
-          rckmer = revcompl(kmer, opt::k);
-          --p; // p must point to the ending position of the kmer, it will be incremented by the for
-        } else {
-          --new_char; // A is 1 but it should be 0
-          kmer = lsappend(kmer, new_char, opt::k);
-          rckmer = rsprepend(rckmer, reverse_char(new_char), opt::k);
-        }
-        kmers.push_back(min(kmer, rckmer));
-      }
-      bloom.add_to_kmer_1(kmers);
-    }
+    tbb::filter_t<void, void> pipeline =
+      tr &
+      kb &
+      tbb::make_filter<vector<vector<uint64_t>>*, void>(
+                                   tbb::filter::serial_in_order,
+                                   [&](vector<vector<uint64_t>>* kmerss) {
+                                     if (kmerss == nullptr) return;
+                                     for (auto& kmers: *kmerss) {
+                                       bloom.add_to_kmer_1(kmers);
+                                     }
+                                     delete kmerss;
+                                   });
+    tbb::parallel_pipeline(opt::nThreads, pipeline);
+
+    kseq_destroy(refseq);
+    gzclose(ref_file);
   }
-  kseq_destroy(seq);
-  gzclose(ref_file);
-
 
   pelapsed("Set sizes computed");
   bloom.switch_mode(2);
   pelapsed("Second switch performed");
   /****************************************************************************/
-                                                                        \
   /*** 2b. Third iteration over transcripts ***********************************/
-  ref_file = gzopen(opt::fasta_path.c_str(), "r");
-  seq = kseq_init(ref_file);
-  int nidx = 0;
-  // open and read the .fa, every time a kmer is found the relative index is
-  // added to BF
-  while ((seq_len = kseq_read(seq)) >= 0) {
-    kmers.clear();
-    if ((uint)seq_len >= opt::k) {
-      int _p = 0;
-      uint64_t kmer = build_kmer(seq->seq.s, _p, opt::k);
-      if(kmer == (uint64_t)-1) continue;
-      uint64_t rckmer = revcompl(kmer, opt::k);
-      kmers.push_back(min(kmer, rckmer));
-      for (int p = _p; p < seq_len; ++p) {
-        uint8_t new_char = to_int[seq->seq.s[p]];
-        if(new_char == 0) { // Found a char different from A, C, G, T
-          ++p; // we skip this character then we build a new kmer
-          kmer = build_kmer(seq->seq.s, p, opt::k);
-          if(kmer == (uint64_t)-1) break;
-          rckmer = revcompl(kmer, opt::k);
-          --p; // p must point to the ending position of the kmer, it will be incremented by the for
-        } else {
-          --new_char; // A is 1 but it should be 0
-          kmer = lsappend(kmer, new_char, opt::k);
-          rckmer = rsprepend(rckmer, reverse_char(new_char), opt::k);
-        }
-        kmers.push_back(min(kmer, rckmer));
-      }
-      bloom.add_to_kmer_2(kmers, nidx);
-    }
-    ++nidx;
-  }
-  kseq_destroy(seq);
-  gzclose(ref_file);
+  {
+    ref_file = gzopen(opt::fasta_path.c_str(), "r");
+    kseq_t *refseq = kseq_init(ref_file);
+    int nidx = 0;
+    tbb::filter_t<void, vector<string>*>
+      tr(tbb::filter::serial_in_order, FastaSplitter(refseq, 100));
+    tbb::filter_t<vector<string>*, vector<vector<uint64_t>>*>
+      kb(tbb::filter::parallel, KmerBuilder(opt::k, opt::bf_size));
 
-  pelapsed("BF created from transcripts (" + to_string(nidx) + " genes)");
+    tbb::filter_t<void, void> pipeline =
+      tr &
+      kb &
+      tbb::make_filter<vector<vector<uint64_t>>*, void>(
+                                   tbb::filter::serial_in_order,
+                                   [&](vector<vector<uint64_t>>* kmerss) {
+                                     if (kmerss == nullptr) return;
+                                     for (auto& kmers: *kmerss) {
+                                       bloom.add_to_kmer_2(kmers, nidx);
+                                       ++nidx;
+                                     }
+                                     delete kmerss;
+                                   });
+    tbb::parallel_pipeline(opt::nThreads, pipeline);
+
+    kseq_destroy(refseq);
+    gzclose(ref_file);
+    pelapsed("BF created from transcripts (" + to_string(nidx) + " genes)");
+  }
 
   bloom.switch_mode(3);
   pelapsed("Third switch performed");

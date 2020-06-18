@@ -81,10 +81,6 @@ public:
     if (_mode != 1)
       return;
 
-    for (auto& kmer: kmers) {
-      kmer = _get_hash(kmer) % _size;
-    }
-    std::sort(kmers.begin(), kmers.end());
     uint64_t prev = _size;
     for (const auto bf_idx: kmers) {
       if (bf_idx == prev) continue;
@@ -98,10 +94,6 @@ public:
     if (_mode != 2)
       return;
 
-    for (auto& kmer: kmers) {
-      kmer = _get_hash(kmer) % _size;
-    }
-    std::sort(kmers.begin(), kmers.end());
     uint64_t prev = _size;
     for (const auto bf_idx: kmers) {
       if (bf_idx == prev) continue;

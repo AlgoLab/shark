@@ -34,8 +34,8 @@ using namespace std;
 
 class FastaSplitter {
 public:
-  FastaSplitter(kseq_t * const _seq, const int _maxnum)
-    : seq(_seq), maxnum(_maxnum)
+  FastaSplitter(kseq_t * const _seq, const int _maxnum, vector<string>* _legend_ID = nullptr)
+    : seq(_seq), maxnum(_maxnum), legend_ID(_legend_ID)
   { }
 
   ~FastaSplitter() {
@@ -46,6 +46,7 @@ public:
     fasta->reserve(maxnum);
     int seq_len;
     while(fasta->size() < maxnum && (seq_len = kseq_read(seq)) >= 0) {
+      if (legend_ID != nullptr) legend_ID->push_back(seq->name.s);
       fasta->emplace_back(seq->seq.s);
     }
     if(fasta->size() > 0) return fasta;
@@ -57,6 +58,7 @@ public:
 private:
   kseq_t * const seq;
   const size_t maxnum;
+  vector<string>* legend_ID;
 
 };
 
