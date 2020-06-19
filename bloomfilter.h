@@ -28,12 +28,14 @@
 #include <string>
 
 #include "kmer_utils.hpp"
+#include "small_vector.hpp"
 
 using namespace std;
 using namespace sdsl;
 
 class KmerBuilder;
 class BloomfilterFiller;
+
 
 class BF {
   friend class KmerBuilder;
@@ -45,7 +47,7 @@ public:
   typedef uint64_t hash_t;
   typedef bit_vector bit_vector_t;
   typedef bit_vector_t::rank_1_type rank_t;
-  typedef vector<int> index_t;
+  typedef small_vector_t index_t;
   typedef vector<index_t> set_index_t;
   typedef vector<uint16_t> index_kmer_t;
   typedef bit_vector_t::select_1_type select_t;
@@ -88,7 +90,7 @@ public:
     for (const auto bf_idx: kmers) {
       int kmer_rank = _brank(bf_idx);
       const auto size = _set_index[kmer_rank].size();
-      if (size == 0 || _set_index[kmer_rank][size-1] != input_idx)
+      if (size == 0 || _set_index[kmer_rank].last() != input_idx)
         _set_index[kmer_rank].push_back(input_idx);
     }
   }
