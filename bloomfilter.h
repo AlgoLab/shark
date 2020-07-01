@@ -27,6 +27,7 @@
 #include <sdsl/util.hpp>
 #include <string>
 
+#include "common.hpp"
 #include "kmer_utils.hpp"
 #include "small_vector.hpp"
 
@@ -36,8 +37,6 @@ using namespace std;
 class BF {
 public:
 
-  typedef uint64_t kmer_t;
-  typedef uint64_t hash_t;
   typedef sdsl::bit_vector bit_vector_t;
   typedef bit_vector_t::rank_1_type rank_t;
   typedef small_vector_t index_t;
@@ -63,7 +62,7 @@ public:
       return;
 
     for (auto& kmer: kmers) {
-      kmer = _get_hash(kmer) % _size;
+      kmer = kmer % _size;
     }
     sort(kmers.begin(), kmers.end());
     for (const auto bf_idx: kmers) {

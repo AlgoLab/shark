@@ -35,4 +35,7 @@ typedef std::pair<string, std::pair<sharseq_t, sharseq_t>> elem_t;
 
 typedef std::pair<string, std::pair<sharseq_t, sharseq_t>> assoc_t;
 
+typedef uint64_t kmer_t;
+typedef uint64_t hash_t;
+
 #endif

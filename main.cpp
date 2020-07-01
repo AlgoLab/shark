@@ -25,6 +25,8 @@
 #include <string>
 #include <vector>
 #include <thread>
+#include <mutex>
+#include <condition_variable>
 
 #include <zlib.h>
 
@@ -34,7 +36,6 @@ KSEQ_INIT(gzFile, gzread)
 #include "common.hpp"
 #include "argument_parser.hpp"
 #include "bloomfilter.h"
-#include "BloomfilterFiller.hpp"
 #include "KmerBuilder.hpp"
 #include "FastaSplitter.hpp"
 #include "FastqSplitter.hpp"
@@ -54,12 +55,88 @@ void pelapsed(const string &s = "") {
 }
 
 
-void reference_1st_pass(FastaSplitter& fs, KmerBuilder& kb, BloomfilterFiller& bff) {
+class BFFiller1st {
+public:
+  BFFiller1st(BF& _bf) : bf(_bf) {}
+
+  void operator()(const vector<uint64_t>& positions) {
+    std::lock_guard<std::mutex> lock(mtx);
+    for(const auto p : positions) {
+      bf.add_at(p);
+    }
+  }
+
+private:
+  BF& bf;
+  std::mutex mtx;
+
+};
+
+template <size_t N>
+void reference_1st_pass(FastaSplitter<N>& fs, KmerBuilder& kb, BFFiller1st& bff1) {
+  vector<string> references;
+  references.reserve(N);
+  vector<vector<kmer_t>> kmer_poss;
+  kmer_poss.reserve(N);
+  vector<kmer_t> kmer_pos;
+  size_t base_idx;
   while (true) {
-    vector<pair<string, string>>* r_fs = fs();
-    if (r_fs == nullptr) return;
-    vector<uint64_t>* r_kb = kb(r_fs);
-    bff(r_kb);
+    fs(references, base_idx);
+    if (references.empty()) return;
+    kb(references, kmer_poss);
+    references.clear();
+    for (auto& v: kmer_poss) {
+      const size_t prev_size = kmer_pos.size();
+      kmer_pos.resize(prev_size + v.size());
+      std::copy(v.begin(), v.end(), kmer_pos.begin() + prev_size);
+      v.clear();
+    }
+    kmer_poss.clear();
+    bff1(kmer_pos);
+    kmer_pos.clear();
+  }
+}
+
+class BFFiller2nd {
+public:
+  BFFiller2nd(BF& _bf) : bf(_bf), next_idx(0) {}
+
+  void operator()(std::vector<std::vector<uint64_t>>& kmer_poss, size_t idx) {
+    {
+      std::unique_lock<std::mutex> lock(mtx);
+      cv.wait(lock, [&]{return idx == next_idx;});
+      for(auto& kmer_pos : kmer_poss) {
+        bf.add_to_kmer(kmer_pos, idx);
+        kmer_pos.clear();
+        ++idx;
+      }
+      next_idx = idx;
+    }
+    cv.notify_all();
+  }
+
+private:
+  BF& bf;
+  std::mutex mtx;
+  size_t next_idx;
+  std::condition_variable cv;
+};
+
+
+template <size_t N>
+void reference_2nd_pass(FastaSplitter<N>& fs, KmerBuilder& kb, BFFiller2nd& bff2) {
+  vector<string> references;
+  references.reserve(N);
+  vector<vector<kmer_t>> kmer_poss;
+  kmer_poss.reserve(N);
+  size_t base_idx;
+  while (true) {
+    fs(references, base_idx);
+    if (references.empty()) return;
+    kb(references, kmer_poss);
+    references.clear();
+    bff2(kmer_poss, base_idx);
+    kmer_poss.clear();
   }
 }
 
@@ -108,7 +185,6 @@ int main(int argc, char *argv[]) {
   BF bloom(opt::bf_size);
   vector<string> legend_ID;
   legend_ID.reserve(100);
-  int seq_len;
 
   if(opt::verbose) {
     cerr << "Reference texts: " << opt::fasta_path << endl;
@@ -125,17 +201,18 @@ int main(int argc, char *argv[]) {
   /****************************************************************************/
 
   /*** 1. First iteration over transcripts ************************************/
+  constexpr size_t N = 128;
   {
     ref_file = gzopen(opt::fasta_path.c_str(), "r");
     kseq_t *refseq = kseq_init(ref_file);
 
-    FastaSplitter fs(refseq, 100, &legend_ID);
+    FastaSplitter<N> fs(refseq, &legend_ID);
     KmerBuilder kb(opt::k);
-    BloomfilterFiller bff(&bloom);
+    BFFiller1st bff1(bloom);
 
     std::vector<std::thread> threads;
     while (static_cast<int>(threads.size()) < opt::nThreads)
-      threads.emplace_back(reference_1st_pass, std::ref(fs), std::ref(kb), std::ref(bff));
+      threads.emplace_back(reference_1st_pass<N>, std::ref(fs), std::ref(kb), std::ref(bff1));
     for (auto& t: threads)
       t.join();
 
@@ -151,44 +228,26 @@ int main(int argc, char *argv[]) {
   /****************************************************************************/
                                                                         \
   /*** 2. Second iteration over transcripts ***********************************/
-  ref_file = gzopen(opt::fasta_path.c_str(), "r");
-  seq = kseq_init(ref_file);
-  int nidx = 0;
-  // open and read the .fa, every time a kmer is found the relative index is
-  // added to BF
-  vector<uint64_t> kmers;
-  while ((seq_len = kseq_read(seq)) >= 0) {
-    kmers.clear();
+  {
+    ref_file = gzopen(opt::fasta_path.c_str(), "r");
+    kseq_t *refseq = kseq_init(ref_file);
 
-    if ((uint)seq_len >= opt::k) {
-      int _p = 0;
-      uint64_t kmer = build_kmer(seq->seq.s, _p, opt::k);
-      if(kmer == (uint64_t)-1) continue;
-      uint64_t rckmer = revcompl(kmer, opt::k);
-      kmers.push_back(min(kmer, rckmer));
-      for (int p = _p; p < seq_len; ++p) {
-        uint8_t new_char = to_int[seq->seq.s[p]];
-        if(new_char == 0) { // Found a char different from A, C, G, T
-          ++p; // we skip this character then we build a new kmer
-          kmer = build_kmer(seq->seq.s, p, opt::k);
-          if(kmer == (uint64_t)-1) break;
-          rckmer = revcompl(kmer, opt::k);
-          --p; // p must point to the ending position of the kmer, it will be incremented by the for
-        } else {
-          --new_char; // A is 1 but it should be 0
-          kmer = lsappend(kmer, new_char, opt::k);
-          rckmer = rsprepend(rckmer, reverse_char(new_char), opt::k);
-        }
-        kmers.push_back(min(kmer, rckmer));
-      }
-      bloom.add_to_kmer(kmers, nidx);
-    }
-    ++nidx;
+    FastaSplitter<N> fs(refseq);
+    KmerBuilder kb(opt::k);
+    BFFiller2nd bff2(bloom);
+
+    std::vector<std::thread> threads;
+    const size_t nThreads = std::min(static_cast<size_t>(opt::nThreads), (legend_ID.size() + N - 1) / N);
+    while (threads.size() < nThreads)
+      threads.emplace_back(reference_2nd_pass<N>, std::ref(fs), std::ref(kb), std::ref(bff2));
+    for (auto& t: threads)
+      t.join();
+
+    kseq_destroy(refseq);
+    gzclose(ref_file);
   }
-  kseq_destroy(seq);
-  gzclose(ref_file);
 
-  pelapsed("BF created from transcripts (" + to_string(nidx) + " genes)");
+  pelapsed("BF created from transcripts");
 
   bloom.switch_mode(2);
   pelapsed("Second switch performed");

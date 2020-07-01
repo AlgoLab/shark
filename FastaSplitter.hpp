@@ -28,36 +28,33 @@
 #include <memory>
 #include <mutex>
 
-using namespace std;
 
+template <size_t N>
 class FastaSplitter {
 public:
-  FastaSplitter(kseq_t * const _seq, const int _maxnum, vector<string>* const _ids = nullptr)
-    : seq(_seq), maxnum(_maxnum), ids(_ids)
+  FastaSplitter(kseq_t * const _seq, std::vector<std::string>* const _ids = nullptr)
+    : seq(_seq), ids(_ids), idx(0)
   { }
 
   ~FastaSplitter() {
   }
 
-  vector<pair<string, string>>* operator()() {
+  void operator()(vector<string>& fasta, size_t& base_idx) {
     std::lock_guard<std::mutex> lock(mtx);
-    vector<pair<string, string>>* const fasta = new vector<pair<string, string>>();
-    fasta->reserve(maxnum);
     int seq_len;
-    while(fasta->size() < maxnum && (seq_len = kseq_read(seq)) >= 0) {
+    base_idx = idx;
+    while (fasta.size() < N && (seq_len = kseq_read(seq)) >= 0) {
       if (ids != nullptr) ids->push_back(seq->name.s);
-      fasta->emplace_back(seq->name.s, seq->seq.s);
+      fasta.emplace_back(seq->seq.s);
+      ++idx;
     }
-    if (!fasta->empty()) return fasta;
-    delete fasta;
-    return nullptr;
   }
 
 private:
   kseq_t * const seq;
-  const size_t maxnum;
-  vector<string>* const ids;
+  std::vector<std::string>* const ids;
   std::mutex mtx;
+  size_t idx;
 
 };
 
