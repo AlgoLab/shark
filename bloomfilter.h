@@ -31,21 +31,14 @@
 #include "small_vector.hpp"
 
 using namespace std;
-using namespace sdsl;
-
-class KmerBuilder;
-class BloomfilterFiller;
 
 
 class BF {
-  friend class KmerBuilder;
-  friend class BloomfilterFiller;
-
 public:
 
   typedef uint64_t kmer_t;
   typedef uint64_t hash_t;
-  typedef bit_vector bit_vector_t;
+  typedef sdsl::bit_vector bit_vector_t;
   typedef bit_vector_t::rank_1_type rank_t;
   typedef small_vector_t index_t;
   typedef vector<index_t> set_index_t;
@@ -62,21 +55,7 @@ public:
   ~BF() {}
 
   void add_at(const uint64_t p) {
-    _bf[p] = 1;
-  }
-
-  // Function to add a k-mer to the BF
-  void add_kmer(const kmer_t kmer) {
-    if (_mode == 0) {
-      uint64_t hash = _get_hash(kmer);
-      _bf[hash % _size] = 1;
-    }
-  }
-
-  // Function to test if a k-mer is in the BF
-  bool test_kmer(const uint64_t &kmer) const {
-    uint64_t hash = _get_hash(kmer);
-    return _bf[hash % _size];
+    _bf[p % _size] = 1;
   }
 
   void add_to_kmer(vector<uint64_t> &kmers, const int input_idx) {
@@ -139,7 +118,7 @@ public:
        * function.
        **/
       _mode = new_mode;
-      util::init_support(_brank,&_bf);
+      sdsl::util::init_support(_brank,&_bf);
       size_t num_kmer = _brank(_bf.size());
       if (num_kmer != 0)
         _set_index.resize(num_kmer, index_t());
@@ -160,13 +139,13 @@ public:
        * data structure for the int_vector that store the
        * concatenation of all the sets.
        **/
-      _bv = bit_vector(tot_idx, 0);
+      _bv = bit_vector_t(tot_idx, 0);
       int pos = -1;
       for (const auto &set : _set_index) {
         pos += set.size();
         _bv[pos] = 1;
       }
-      util::init_support(_select_bv,&_bv);
+      sdsl::util::init_support(_select_bv,&_bv);
 
       /**
        * We merge the idxs associated to each kmer into a single

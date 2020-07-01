@@ -39,7 +39,7 @@ public:
     {
       std::lock_guard<std::mutex> lock(mtx);
       for(const auto p : *positions) {
-        bf->add_at(p % bf->_size);
+        bf->add_at(p);
       }
     }
     delete positions;
