@@ -23,40 +23,41 @@
 #define FASTA_SPLITTER_HPP
 
 #include "kseq.h"
-#include <zlib.h>
 #include <string>
 #include <vector>
 #include <memory>
-
-#include <tbb/pipeline.h>
+#include <mutex>
 
 using namespace std;
 
 class FastaSplitter {
 public:
-  FastaSplitter(kseq_t * const _seq, const int _maxnum)
-    : seq(_seq), maxnum(_maxnum)
+  FastaSplitter(kseq_t * const _seq, const int _maxnum, vector<string>* const _ids = nullptr)
+    : seq(_seq), maxnum(_maxnum), ids(_ids)
   { }
 
   ~FastaSplitter() {
   }
 
-  vector<pair<string, string>>* operator()(tbb::flow_control &fc) const {
+  vector<pair<string, string>>* operator()() {
+    std::lock_guard<std::mutex> lock(mtx);
     vector<pair<string, string>>* const fasta = new vector<pair<string, string>>();
     fasta->reserve(maxnum);
     int seq_len;
     while(fasta->size() < maxnum && (seq_len = kseq_read(seq)) >= 0) {
+      if (ids != nullptr) ids->push_back(seq->name.s);
       fasta->emplace_back(seq->name.s, seq->seq.s);
     }
-    if(fasta->size() > 0) return fasta;
-    fc.stop();
+    if (!fasta->empty()) return fasta;
     delete fasta;
-    return NULL;
+    return nullptr;
   }
 
 private:
   kseq_t * const seq;
   const size_t maxnum;
+  vector<string>* const ids;
+  std::mutex mtx;
 
 };
 

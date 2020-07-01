@@ -35,16 +35,19 @@ class BloomfilterFiller {
 public:
   BloomfilterFiller(BF *_bf) : bf(_bf) {}
 
-  void operator()(vector<uint64_t> *positions) const {
-    if(positions) {
-      for(const auto & p : *positions) {
+  void operator()(vector<uint64_t> *positions) {
+    {
+      std::lock_guard<std::mutex> lock(mtx);
+      for(const auto p : *positions) {
         bf->add_at(p % bf->_size);
       }
-      delete positions;
     }
+    delete positions;
   }
 
 private:
-  BF* bf;
+  BF *const bf;
+  std::mutex mtx;
+
 };
 #endif

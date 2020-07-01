@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <thread>
 
 #include <zlib.h>
 
@@ -51,6 +52,30 @@ void pelapsed(const string &s = "") {
        << chrono::duration_cast<chrono::milliseconds>(now_t - start_t).count()/1000
        << endl;
 }
+
+
+void reference_1st_pass(FastaSplitter& fs, KmerBuilder& kb, BloomfilterFiller& bff) {
+  while (true) {
+    vector<pair<string, string>>* r_fs = fs();
+    if (r_fs == nullptr) return;
+    vector<uint64_t>* r_kb = kb(r_fs);
+    bff(r_kb);
+  }
+}
+
+void read_analysis(FastqSplitter& fs, ReadAnalyzer& ra, ReadOutput& ro) {
+  FastqSplitter::output_t reads;
+  ReadAnalyzer::output_t associations;
+  while (true) {
+    fs(reads);
+    if (reads.empty()) return;
+    ra(reads, associations);
+    ro(associations);
+    reads.clear();
+    associations.clear();
+  }
+}
+
 
 /*****************************************
  * Main
@@ -82,6 +107,7 @@ int main(int argc, char *argv[]) {
 
   BF bloom(opt::bf_size);
   vector<string> legend_ID;
+  legend_ID.reserve(100);
   int seq_len;
 
   if(opt::verbose) {
@@ -102,15 +128,16 @@ int main(int argc, char *argv[]) {
   {
     ref_file = gzopen(opt::fasta_path.c_str(), "r");
     kseq_t *refseq = kseq_init(ref_file);
-    tbb::filter_t<void, vector<pair<string, string>>*>
-      tr(tbb::filter::serial_in_order, FastaSplitter(refseq, 100));
-    tbb::filter_t<vector<pair<string, string>>*, vector<uint64_t>*>
-      kb(tbb::filter::parallel, KmerBuilder(opt::k));
-    tbb::filter_t<vector<uint64_t>*, void>
-      bff(tbb::filter::serial_out_of_order, BloomfilterFiller(&bloom));
 
-    tbb::filter_t<void, void> pipeline = tr & kb & bff;
-    tbb::parallel_pipeline(opt::nThreads, pipeline);
+    FastaSplitter fs(refseq, 100, &legend_ID);
+    KmerBuilder kb(opt::k);
+    BloomfilterFiller bff(&bloom);
+
+    std::vector<std::thread> threads;
+    while (static_cast<int>(threads.size()) < opt::nThreads)
+      threads.emplace_back(reference_1st_pass, std::ref(fs), std::ref(kb), std::ref(bff));
+    for (auto& t: threads)
+      t.join();
 
     kseq_destroy(refseq);
     gzclose(ref_file);
@@ -132,8 +159,6 @@ int main(int argc, char *argv[]) {
   vector<uint64_t> kmers;
   while ((seq_len = kseq_read(seq)) >= 0) {
     kmers.clear();
-    string input_name = seq->name.s;
-    legend_ID.push_back(input_name);
 
     if ((uint)seq_len >= opt::k) {
       int _p = 0;
@@ -187,15 +212,15 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    tbb::filter_t<void, FastqSplitter::output_t*>
-      sr(tbb::filter::serial_in_order, FastqSplitter(sseq1, sseq2, 50000, opt::min_quality, out1 != nullptr));
-    tbb::filter_t<FastqSplitter::output_t*, ReadAnalyzer::output_t*>
-      ra(tbb::filter::parallel, ReadAnalyzer(&bloom, legend_ID, opt::k, opt::c, opt::single));
-    tbb::filter_t<ReadAnalyzer::output_t*, void>
-      so(tbb::filter::serial_in_order, ReadOutput(out1, out2));
+    FastqSplitter fs(sseq1, sseq2, 50000, opt::min_quality, out1 != nullptr);
+    ReadAnalyzer ra(&bloom, legend_ID, opt::k, opt::c, opt::single);
+    ReadOutput ro(out1, out2);
 
-    tbb::filter_t<void, void> pipeline_reads = sr & ra & so;
-    tbb::parallel_pipeline(opt::nThreads, pipeline_reads);
+    std::vector<std::thread> threads;
+    while (static_cast<int>(threads.size()) < opt::nThreads)
+      threads.emplace_back(read_analysis, std::ref(fs), std::ref(ra), std::ref(ro));
+    for (auto& t: threads)
+      t.join();
 
     kseq_destroy(sseq1);
     gzclose(read1_file);

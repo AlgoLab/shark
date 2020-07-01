@@ -4,9 +4,9 @@
 Fast tool for mapping-free gene separation of reads, using Bloom filter.
 
 ## Dependencies
-Shark requires the following libraries and tools:
-- [sdsl-lite v2.1.1](https://github.com/simongog/sdsl-lite/tree/v2.1.1)
-- Intel TBB (tested with version 2017 update 7)
+
+Shark requires a C++11-compliant compiler and the [`sdsl-lite v2.1.1`](https://github.com/simongog/sdsl-lite/tree/v2.1.1) library.
+For convenience, `sdsl-lite` is included in the repository.
 
 ## Download and Installation
 To install the tool, run the following steps.

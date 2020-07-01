@@ -36,12 +36,11 @@ public:
   ReadAnalyzer(BF *_bf, const vector<string>& _legend_ID, uint _k, double _c, bool _only_single = false) :
   bf(_bf), legend_ID(_legend_ID), k(_k), c(_c), only_single(_only_single) {}
 
-  output_t* operator()(vector<elem_t> *reads) const {
-    output_t* associations = new output_t();
+  void operator()(const vector<elem_t>& reads, output_t& associations) const {
     vector<int> genes_idx;
     typedef pair<pair<unsigned int, unsigned int>, unsigned int> gene_cov_t;
     map<int, gene_cov_t> classification_id;
-    for(const auto & p : *reads) {
+    for(const auto & p : reads) {
       classification_id.clear();
       const string& read_seq = p.first;
       unsigned int len = 0;
@@ -104,16 +103,9 @@ public:
 
       if(max >= c*len && (!only_single || genes_idx.size() == 1)) {
         for(const auto idx : genes_idx) {
-          associations->push_back({ legend_ID[idx], std::move(get<1>(p)) });
+          associations.push_back({ legend_ID[idx], std::move(get<1>(p)) });
         }
       }
-    }
-    delete reads;
-    if(associations->size())
-      return associations;
-    else {
-      delete associations;
-      return NULL;
     }
   }
 

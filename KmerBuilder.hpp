@@ -38,44 +38,41 @@ public:
   KmerBuilder(size_t _k) : k(_k) {}
 
   vector<uint64_t>* operator()(vector<pair<string, string>> *texts) const {
-    if(texts) {
-      vector<uint64_t>* kmer_pos = new vector<uint64_t>();
-      uint64_t kmer, rckmer, key;
-      for(const auto & p : *texts) {
-        if(p.second.size() >= k) {
-          int _pos = 0;
-          kmer = build_kmer(p.second, _pos, k);
-          if(kmer == (uint64_t)-1) continue;
-          rckmer = revcompl(kmer, k);
+    vector<uint64_t>* kmer_pos = new vector<uint64_t>();
+    uint64_t kmer, rckmer, key;
+    for(const auto & p : *texts) {
+      if(p.second.size() >= k) {
+        int _pos = 0;
+        kmer = build_kmer(p.second, _pos, k);
+        if(kmer == (uint64_t)-1) continue;
+        rckmer = revcompl(kmer, k);
+        key = min(kmer, rckmer);
+        kmer_pos->push_back(_get_hash(key));
+
+        for (int pos = _pos; pos < (int)p.second.size(); ++pos) {
+          uint8_t new_char = to_int[p.second[pos]];
+          if(new_char == 0) { // Found a char different from A, C, G, T
+            ++pos; // we skip this character then we build a new kmer
+            kmer = build_kmer(p.second, pos, k);
+            if(kmer == (uint64_t)-1) break;
+            rckmer = revcompl(kmer, k);
+            --pos; // p must point to the ending position of the kmer, it will be incremented by the for
+          } else {
+            --new_char; // A is 1 but it should be 0
+            kmer = lsappend(kmer, new_char, k);
+            rckmer = rsprepend(rckmer, reverse_char(new_char), k);
+          }
           key = min(kmer, rckmer);
           kmer_pos->push_back(_get_hash(key));
-
-          for (int pos = _pos; pos < (int)p.second.size(); ++pos) {
-            uint8_t new_char = to_int[p.second[pos]];
-            if(new_char == 0) { // Found a char different from A, C, G, T
-              ++pos; // we skip this character then we build a new kmer
-              kmer = build_kmer(p.second, pos, k);
-              if(kmer == (uint64_t)-1) break;
-              rckmer = revcompl(kmer, k);
-              --pos; // p must point to the ending position of the kmer, it will be incremented by the for
-            } else {
-              --new_char; // A is 1 but it should be 0
-              kmer = lsappend(kmer, new_char, k);
-              rckmer = rsprepend(rckmer, reverse_char(new_char), k);
-            }
-            key = min(kmer, rckmer);
-            kmer_pos->push_back(_get_hash(key));
-          }
         }
       }
-      delete texts;
-      return kmer_pos;
     }
-    return NULL;
+    delete texts;
+    return kmer_pos;
   }
 
 private:
-  size_t k;
+  const size_t k;
 };
 
 #endif
