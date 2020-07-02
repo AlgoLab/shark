@@ -140,15 +140,16 @@ void reference_2nd_pass(FastaSplitter<N>& fs, KmerBuilder& kb, BFFiller2nd& bff2
   }
 }
 
-void read_analysis(FastqSplitter& fs, ReadAnalyzer& ra, ReadOutput& ro) {
-  FastqSplitter::output_t reads;
+template <size_t N>
+void read_analysis(FastqSplitter<N>& fs, ReadAnalyzer& ra, ReadOutput& ro) {
+  typename FastqSplitter<N>::output_t reads;
   ReadAnalyzer::output_t associations;
   while (true) {
     fs(reads);
     if (reads.empty()) return;
     ra(reads, associations);
-    ro(associations);
     reads.clear();
+    ro(associations);
     associations.clear();
   }
 }
@@ -255,6 +256,7 @@ int main(int argc, char *argv[]) {
   /****************************************************************************/
 
   /*** 3. Iteration over the sample *****************************************/
+  constexpr size_t NS = 1 << 16;
   {
     kseq_t *sseq1 = nullptr, *sseq2 = nullptr;
     FILE *out1 = nullptr, *out2 = nullptr;
@@ -271,13 +273,13 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    FastqSplitter fs(sseq1, sseq2, 50000, opt::min_quality, out1 != nullptr);
-    ReadAnalyzer ra(&bloom, legend_ID, opt::k, opt::c, opt::single);
+    FastqSplitter<NS> fs(sseq1, sseq2, opt::min_quality, out1 != nullptr);
+    ReadAnalyzer ra(bloom, legend_ID, opt::k, opt::c, opt::single);
     ReadOutput ro(out1, out2);
 
     std::vector<std::thread> threads;
     while (static_cast<int>(threads.size()) < opt::nThreads)
-      threads.emplace_back(read_analysis, std::ref(fs), std::ref(ra), std::ref(ro));
+      threads.emplace_back(read_analysis<NS>, std::ref(fs), std::ref(ra), std::ref(ro));
     for (auto& t: threads)
       t.join();
 

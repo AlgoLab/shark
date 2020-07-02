@@ -26,6 +26,7 @@
 #include "kmer_utils.hpp"
 #include <vector>
 #include <array>
+#include <map>
 
 using namespace std;
 
@@ -33,7 +34,7 @@ class ReadAnalyzer {
 public:
   typedef vector<assoc_t> output_t;
 
-  ReadAnalyzer(BF *_bf, const vector<string>& _legend_ID, uint _k, double _c, bool _only_single = false) :
+  ReadAnalyzer(const BF& _bf, const vector<string>& _legend_ID, uint _k, double _c, bool _only_single = false) :
   bf(_bf), legend_ID(_legend_ID), k(_k), c(_c), only_single(_only_single) {}
 
   void operator()(const vector<elem_t>& reads, output_t& associations) const {
@@ -52,7 +53,7 @@ public:
         uint64_t kmer = build_kmer(read_seq, pos, k);
         if(kmer == (uint64_t)-1) continue;
         uint64_t rckmer = revcompl(kmer, k);
-        auto id_kmer = bf->get_index(min(kmer, rckmer));
+        auto id_kmer = bf.get_index(min(kmer, rckmer));
         while (id_kmer.first <= id_kmer.second) {
           auto& gene_cov = classification_id[*(id_kmer.first)];
           gene_cov.first.first += min(k, pos - gene_cov.second);
@@ -74,7 +75,7 @@ public:
             kmer = lsappend(kmer, new_char, k);
             rckmer = rsprepend(rckmer, reverse_char(new_char), k);
           }
-          id_kmer = bf->get_index(min(kmer, rckmer));
+          id_kmer = bf.get_index(min(kmer, rckmer));
           // cerr << "POS: " << pos << endl;
           while (id_kmer.first <= id_kmer.second) {
             auto& gene_cov = classification_id[*(id_kmer.first)];
@@ -110,7 +111,7 @@ public:
   }
 
 private:
-  BF * const bf;
+  const BF& bf;
   const vector<string>& legend_ID;
   const uint k;
   const double c;

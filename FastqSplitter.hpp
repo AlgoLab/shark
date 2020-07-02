@@ -31,13 +31,14 @@
 
 using namespace std;
 
+template <size_t N>
 class FastqSplitter {
 public:
 
   typedef vector<elem_t> output_t;
 
-  FastqSplitter(kseq_t * const _seq1, kseq_t * const _seq2, const int _maxnum, const char _min_quality, const bool _full_mode)
-    : seq1(_seq1), seq2(_seq2), maxnum(_maxnum), min_quality(_min_quality), full_mode(_full_mode), empty_el({})
+  FastqSplitter(kseq_t * const _seq1, kseq_t * const _seq2, const char _min_quality, const bool _full_mode)
+    : seq1(_seq1), seq2(_seq2), min_quality(_min_quality), full_mode(_full_mode), empty_el({})
   {
   }
 
@@ -46,11 +47,11 @@ public:
 
   void operator()(output_t& fastq) {
     std::lock_guard<std::mutex> lock(mtx);
-    fastq.reserve(maxnum);
+    fastq.reserve(N);
     int seq_len1, seq_len2;
     if (min_quality == 0) {
       if (seq2 == nullptr) {
-        while (fastq.size() < maxnum && (seq_len1 = kseq_read(seq1)) >= 0) {
+        while (fastq.size() < N && (seq_len1 = kseq_read(seq1)) >= 0) {
           fastq.push_back({
             seq1->seq.s,
             { { seq1->name.s, full_mode ? seq1->seq.s : "", full_mode ? seq1->qual.s : "" },
@@ -58,7 +59,7 @@ public:
           });
         }
       } else {
-        while (fastq.size() < maxnum && (seq_len1 = kseq_read(seq1)) >= 0 && (seq_len2 = kseq_read(seq2)) >= 0) {
+        while (fastq.size() < N && (seq_len1 = kseq_read(seq1)) >= 0 && (seq_len2 = kseq_read(seq2)) >= 0) {
           fastq.push_back({
             string(seq1->seq.s) + "N" + string(seq2->seq.s),
             { { seq1->name.s, full_mode ? seq1->seq.s : "", full_mode ? seq1->qual.s : "" },
@@ -69,7 +70,7 @@ public:
     } else {
       const char mq = min_quality + 33;
       if (seq2 == nullptr) {
-        while (fastq.size() < maxnum && (seq_len1 = kseq_read(seq1)) >= 0) {
+        while (fastq.size() < N && (seq_len1 = kseq_read(seq1)) >= 0) {
           fastq.push_back({
             mask_seq(seq1->seq.s, seq1->qual.s, seq1->qual.l, mq),
             { { seq1->name.s, full_mode ? seq1->seq.s : "", full_mode ? seq1->qual.s : "" },
@@ -77,7 +78,7 @@ public:
           });
         }
       } else {
-        while (fastq.size() < maxnum && (seq_len1 = kseq_read(seq1)) >= 0 && (seq_len2 = kseq_read(seq2)) >= 0) {
+        while (fastq.size() < N && (seq_len1 = kseq_read(seq1)) >= 0 && (seq_len2 = kseq_read(seq2)) >= 0) {
           fastq.push_back({
             mask_seq(
               string(seq1->seq.s) + "N" + string(seq2->seq.s),
@@ -95,15 +96,15 @@ public:
 private:
   kseq_t * const seq1;
   kseq_t * const seq2;
-  const size_t maxnum;
   const char min_quality;
   const bool full_mode;
   const sharseq_t empty_el;
   std::mutex mtx;
 
   static string mask_seq(string seq, const char* const qual, const size_t l, const char min_quality) {
+    constexpr char BASE = 64;
     for (size_t i = 0; i < l; ++i) {
-      if (qual[i] < min_quality) seq[i] = seq[i] - 64;
+      if (qual[i] < min_quality) seq[i] = seq[i] - BASE;
     }
     return seq;
   }
