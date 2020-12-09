@@ -67,3 +67,9 @@ To filter out the reads sequenced from gene ENSG00000277117, run `shark` as foll
 ```
 
 The results should be equal to: `example/ENSG00000277117.truth.ssv`, `example/sharked.sample_1.truth.fq`, and  `example/sharked.sample_2.truth.fq`.
+
+## Citation
+
+L. Denti, Y. Pirola, M. Previtali, T. Ceccato, G. Della Vedova, R. Rizzi, P. Bonizzoni,  
+“Shark: fishing relevant reads in an RNA-Seq sample,”  
+Bioinformatics, Sep. 2020, doi: [10.1093/bioinformatics/btaa779](http://dx.doi.org/10.1093/bioinformatics/btaa779).
